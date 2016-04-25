@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Leiterspiel</string>
+    <string name="dice_button">Würfeln</string>
+    <string name="game_finished">Spiel beendet</string>
 </resources>

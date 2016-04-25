@@ -9,12 +9,17 @@ import android.graphics.drawable.BitmapDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class GameActivity extends AppCompatActivity {
+public class GameActivity extends AppCompatActivity implements IGameUI {
 
     // controlling the framerate
     private final int FPS = 30;
@@ -28,6 +33,12 @@ public class GameActivity extends AppCompatActivity {
     private Bitmap bg;
     private Canvas canvas;
     private LinearLayout layout;
+    private TextView statusView;
+    private Button diceButton;
+    private int diceResult = 0;
+    private String status;
+    private boolean uiChanged = true;
+    private boolean uiEnabled = false;
 
     // style of the GameBoard
     private final int MIN_VERTICAL_FIELDS = 3;
@@ -37,23 +48,64 @@ public class GameActivity extends AppCompatActivity {
     private int verticalFields; // number of fields aligned vertically, connecting the horizontal lines
 
     private GameManager gameManager;
+    private SoundManager soundManager;
+
+    // interaction
+    TextView diceView;
+    Random random = new Random();
 
     private void init() {
         layout = (LinearLayout) findViewById(R.id.gameCanvas);
+        diceView = (TextView) findViewById(R.id.diceTextView);
+        diceButton = (Button) findViewById(R.id.diceButton);
+        statusView = (TextView) findViewById(R.id.statusView);
 
         canvasWidth = layout.getWidth();
         canvasHeight = layout.getHeight();
-        Log.d("Tag", "canvas size set to " + canvasWidth + "x" + canvasHeight);
-
-        gameManager = new GameManager();
         bg = Bitmap.createBitmap(canvasWidth, canvasHeight, Bitmap.Config.ARGB_8888);
         canvas = new Canvas(bg);
+        Log.d("Tag", "canvas size set to " + canvasWidth + "x" + canvasHeight);
+
+        random.setSeed(System.currentTimeMillis());
+
+        layout.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == event.ACTION_DOWN) {
+                    int height = v.getHeight();
+                    Point point = new Point((int) event.getX(), (int) (height - event.getY()));
+                    gameManager.notify(point);
+                }
+
+                return false;
+            }
+        });
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game);
+
+        gameManager = new GameManager(this);
+        soundManager = new SoundManager(getApplicationContext());
+
+        // creating a tiny test game
+        gameManager.getGameBoard().setNumberOfFields(60);
+        gameManager.addLadder(new Ladder(Ladder.LadderType.BIDIRECTIONAL, 3, 15));
+        gameManager.addLadder(new Ladder(Ladder.LadderType.DOWN, 23, 37));
+        gameManager.addLadder(new Ladder(Ladder.LadderType.UP, 39, 46));
+        gameManager.addLadder(new Ladder(Ladder.LadderType.DOWN, 34, 57));
+        gameManager.addLadder(new Ladder(Ladder.LadderType.UP, 13, 26));
+
+        Player player0 = new LocalPlayer("Patrick", gameManager);
+        Player player1 = new BotPlayer(gameManager);
+        Player player2 = new BotPlayer(gameManager);
+        Player player3 = new BotPlayer(gameManager);
+        gameManager.addPlayer(player0);
+        gameManager.addPlayer(player1);
+        gameManager.addPlayer(player2);
+        gameManager.addPlayer(player3);
     }
 
     @Override
@@ -62,21 +114,25 @@ public class GameActivity extends AppCompatActivity {
 
         init();
 
-        // creating a tiny test game
-        gameManager.getGameBoard().setNumberOfFields(60);
-        gameManager.addLadder(new Ladder(Ladder.LadderType.BIDIRECTIONAL, 5, 15));
-        gameManager.addLadder(new Ladder(Ladder.LadderType.DOWN, 23, 37));
-        gameManager.addLadder(new Ladder(Ladder.LadderType.UP, 42, 48));
-
-        Player player0 = new Player("Player 0");
-        Player player1 = new Player("Player 1");
-        Player player2 = new Player("Player 2");
-        gameManager.addPlayer(player0);
-        gameManager.addPlayer(player1);
-        gameManager.addPlayer(player2);
-
         buildBoard(); // generate game board
 
+        runGraphics();
+
+        gameManager.startGame();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        gameManager.pauseGame();
+
+        drawTask.cancel(); // stop graphics output
+        graphicsTimer.cancel();
+        graphicsActive = false;
+    }
+
+    private void runGraphics() {
         if (!graphicsActive) {
             graphicsTimer = new Timer();
             drawTask = new TimerTask() {
@@ -93,17 +149,6 @@ public class GameActivity extends AppCompatActivity {
             graphicsTimer.scheduleAtFixedRate(drawTask, 0, 1000 / FPS); // start graphics output
             graphicsActive = true;
         }
-
-        gameManager.startSim(); // temporary for testing; crashes app when activity pauses.
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-
-        drawTask.cancel(); // stop graphics output
-        graphicsTimer.cancel();
-        graphicsActive = false;
     }
 
     private void drawGame() {
@@ -111,6 +156,17 @@ public class GameActivity extends AppCompatActivity {
         drawBoard(); // draw the board on the canvas
         drawPieces(); // draw the players on the canvas
         layout.setBackground(new BitmapDrawable(bg)); // display updated canvas
+        updateUI();
+    }
+
+    private void updateUI() {
+        if (uiChanged) {
+            diceView.setText(diceResult+"");
+            statusView.setText(status);
+            diceButton.setEnabled(uiEnabled);
+
+            uiChanged = false;
+        }
     }
 
     private void buildBoard() {
@@ -120,8 +176,8 @@ public class GameActivity extends AppCompatActivity {
             horizontalFields = (int) (minHorizontalFields * m);
         } else horizontalFields = minHorizontalFields;
 
-        fieldRadius = (int) (canvasWidth*0.9 / horizontalFields / 2.5);
-        int maxVerticalFields = (int) (canvasHeight*0.9 / (fieldRadius*2.5));
+        fieldRadius = (int) (canvasWidth*0.9 / horizontalFields / 3);
+        int maxVerticalFields = (int) (canvasHeight*0.9 / (fieldRadius*3));
         int remainingFields = gameManager.getGameBoard().getNumberOfFields() - maxVerticalFields;
         int layers = (int) Math.ceil(remainingFields / horizontalFields);
         verticalFields = (int) Math.max((gameManager.getGameBoard().getNumberOfFields() - layers * horizontalFields) /
@@ -198,7 +254,10 @@ public class GameActivity extends AppCompatActivity {
         Paint paint = new Paint();
         paint.setColor(Color.WHITE);
         paint.setStyle(Paint.Style.FILL_AND_STROKE);
-        canvas.drawRect(0, 0, canvasWidth, canvasHeight, paint);
+        canvas.drawRect(0, 0, canvasWidth - 1, canvasHeight - 1, paint);
+        paint.setColor(Color.BLACK);
+        paint.setStyle(Paint.Style.STROKE);
+        canvas.drawRect(0, 0, canvasWidth - 1, canvasHeight - 1, paint);
     }
 
     private void drawBoard() {
@@ -220,6 +279,13 @@ public class GameActivity extends AppCompatActivity {
                 paint.setColor(Color.CYAN);
                 paint.setStyle(Paint.Style.FILL);
             }
+
+            if (field.isHighlighted()) {
+                paint.setColor(Color.GREEN);
+                paint.setStyle(Paint.Style.FILL);
+                canvas.drawCircle(field.getPos().x, canvasHeight - field.getPos().y, (int) (fieldRadius*1.2), paint);
+            }
+
             // invert Y coordinate because 2D Y axis is inverted
             canvas.drawCircle(field.getPos().x, canvasHeight - field.getPos().y, fieldRadius, paint);
         }
@@ -330,5 +396,41 @@ public class GameActivity extends AppCompatActivity {
                 (int)( (1-t)*start.x + t*end.x ),
                 (int)( (1-t)*start.y + t*end.y )
         );
+    }
+
+    public int rollDice(View view) {
+        soundManager.playDiceSound();
+
+        int result = random.nextInt(6)+1;
+        diceResult = result;
+        uiChanged = true;
+
+        gameManager.highlightField(result);
+
+        return result;
+    }
+
+    @Override
+    public void disableUI() {
+        if (uiEnabled) uiChanged = true;
+        uiEnabled = false;
+    }
+
+    @Override
+    public void enableUI() {
+        if (!uiEnabled) uiChanged = true;
+        uiEnabled = true;
+    }
+
+    @Override
+    public void showStatus(String status) {
+        uiChanged = true;
+        this.status = status;
+    }
+
+    @Override
+    public void endGame() {
+        this.disableUI();
+        this.showStatus(getResources().getString(R.string.game_finished));
     }
 }

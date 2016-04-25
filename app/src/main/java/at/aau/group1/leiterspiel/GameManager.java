@@ -1,5 +1,6 @@
 package at.aau.group1.leiterspiel;
 
+import android.graphics.Point;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -10,28 +11,25 @@ import java.util.TimerTask;
 /**
  * Created by Igor on 18.04.2016.
  */
-public class GameManager {
+public class GameManager implements IPlayerObserver, ITouchObserver {
+
+    private boolean active = false;
 
     private GameBoard gameBoard;
     private ArrayList<Player> players;
     private int activePlayer;
 
-    // simple simulation stuff
-    private Timer simTimer = new Timer();
-    private TimerTask simTask = new TimerTask() {
-        @Override
-        public void run() {
-            simulateTurn();
-        }
-    };
+    private IGameUI ui;
 
-    public GameManager() {
+    public GameManager(IGameUI ui) {
+        this.ui = ui;
         gameBoard = new GameBoard();
         players = new ArrayList<Player>();
         init();
     }
 
-    public GameManager(GameBoard gameBoard, ArrayList<Player> players) {
+    public GameManager(IGameUI ui, GameBoard gameBoard, ArrayList<Player> players) {
+        this.ui = ui;
         this.gameBoard = gameBoard;
         this.players = players;
         init();
@@ -41,16 +39,27 @@ public class GameManager {
         activePlayer = 0;
     }
 
-    public void startSim() {
-        simTimer.scheduleAtFixedRate(simTask, 0, 1000); // run the simulation with 1 turn per second
+    public void startGame() {
+        if(!active) {
+            this.active = true;
+            updateUI();
+            players.get(activePlayer).poke();
+        }
     }
+
+    private void updateUI() {
+        if (players.get(activePlayer).expectsTouchInput()) ui.enableUI();
+        else ui.disableUI();
+
+        ui.showStatus(players.get(activePlayer).getName());
+    }
+
+    public void pauseGame() { this.active = false; }
 
     public void addPlayer(Player player) {
         players.add(player);
         gameBoard.addPiece(new Piece(player.getPlayerID()));
     }
-
-//    public void setNumberOfFields(int fields) { gameBoard.setNumberOfFields(fields); }
 
     public GameBoard getGameBoard() { return gameBoard; }
 
@@ -61,23 +70,47 @@ public class GameManager {
     }
 
     public boolean executeMove(int playerID, int fields) {
-        if (playerID != activePlayer) throw new IllegalArgumentException("it's a different player's turn");
-
-        boolean result = gameBoard.movePiece(playerID, fields);
-        // switching to the next player
-        if (++activePlayer >= players.size()) activePlayer = 0;
-
-        return result;
+        return gameBoard.movePiece(playerID, fields);
     }
 
-    private void simulateTurn() {
-        Random random = new Random();
-        int diceRoll = random.nextInt(6)+1;
-        Log.d("Tag", "Player "+activePlayer+" rolled "+diceRoll);
-
-        if ( executeMove(activePlayer, diceRoll) ) {
-            simTimer.cancel();
+    @Override
+    public void move(int playerID, int diceRoll) {
+//        if (playerID != activePlayer) throw new IllegalArgumentException("it's a different player's turn");
+        if (playerID == activePlayer) {
+            if (executeMove(playerID, diceRoll)) { // if game has ended
+                ui.endGame();
+            } else {
+                // switching to the next player
+                if (++activePlayer >= players.size()) activePlayer = 0;
+                updateUI();
+                if (active) players.get(activePlayer).poke();
+            }
         }
     }
 
+    @Override
+    public int rollDice(int playerID) {
+        int number = this.ui.rollDice(null); // get the rolled number
+
+        return number;
+    }
+
+    public void highlightField(int dice) {
+        // highlight the target field
+        Piece piece = getGameBoard().getPieceOfPlayer( players.get(activePlayer).getPlayerID() );
+        int field = dice;
+        if(piece != null) {
+            field += piece.getField();
+            if (field < gameBoard.getNumberOfFields()) getGameBoard().getFields()[field].setHighlighted(true);
+        }
+    }
+
+    @Override
+    public void notify(Point point) {
+        if (players.get(activePlayer).expectsTouchInput()) {
+            int field = gameBoard.getFieldAtPosition(point);
+            move(players.get(activePlayer).getPlayerID(),
+                    field - gameBoard.getPieces().get(activePlayer).getField());
+        }
+    }
 }

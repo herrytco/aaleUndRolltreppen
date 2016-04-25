@@ -1,5 +1,6 @@
 package at.aau.group1.leiterspiel;
 
+import android.graphics.Point;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -63,6 +64,7 @@ public class GameBoard {
     // returns true if this move ends the game, otherwise false
     public boolean movePiece(int playerID, int fields) {
         int previousField = 0; // for debug messages only
+        boolean gameEnded = false;
 
         Piece currentPiece = null;
         for (Piece p: pieces) {
@@ -77,9 +79,11 @@ public class GameBoard {
 
         // checks if the goal will be reached
         if (currentField + fields == numberOfFields-1) { // TODO end the game properly
-            currentPiece.setField(numberOfFields-1);
+//            currentPiece.setField(numberOfFields-1);
+            currentField += fields;
+            gameEnded = true;
             Log.d("Tag", "Game ended. Winner is player "+playerID);
-            return true;
+//            return true;
         } else if (currentField + fields >= numberOfFields) { // TODO specify rules
             // do nothing in case the goal would be overshot
             return false;
@@ -98,8 +102,20 @@ public class GameBoard {
         // move piece to currentField
         currentPiece.setField(currentField);
 
-        Log.d("Tag", "Player "+playerID+" moved from field "+previousField+" to "+currentField);
-        return false;
+        // remove highlighting
+        for (int f=0; f<numberOfFields; f++) {
+            this.fields[f].setHighlighted(false);
+        }
+
+        Log.d("Tag", "Player " + playerID + " moved from field " + previousField + " to " + currentField);
+        return gameEnded;
+    }
+
+    public Piece getPieceOfPlayer(int playerID) {
+        for (Piece piece:pieces) {
+            if (piece.getPlayerID() == playerID) return piece;
+        }
+        return null;
     }
 
     public ArrayList<Piece> getPiecesOnField(int field) {
@@ -115,6 +131,24 @@ public class GameBoard {
             if (field == ladder.getStartField() || field == ladder.getEndField()) return ladder;
         }
         return null;
+    }
+
+    // for locating the field nearest to a touch input event
+    public int getFieldAtPosition(Point point) {
+        int nearestField = 0;
+        int minDistance = Integer.MAX_VALUE;
+        for (int n=0; n<fields.length; n++) {
+            GameField field = fields[n];
+            int dx = Math.abs(point.x - field.getPos().x);
+            int dy = Math.abs(point.y - field.getPos().y);
+            int d = (int) Math.hypot(dx, dy);
+
+            if (d < minDistance) {
+                minDistance = d;
+                nearestField = n;
+            }
+        }
+        return nearestField;
     }
 
 }

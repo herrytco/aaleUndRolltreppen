@@ -3,17 +3,25 @@ package at.aau.group1.leiterspiel;
 /**
  * Created by Igor on 18.04.2016.
  */
-public class Player {
+public abstract class Player {
 
     private static int nextID = 0;
 
     private int playerID;
     private String name;
+    IPlayerObserver observer;
 
-    public Player(String name) {
+    public Player() {
+        this.playerID = nextID;
+        nextID++;
+        this.name = "Player "+this.playerID;
+    }
+
+    public Player(String name, IPlayerObserver observer) {
         this.playerID = nextID;
         nextID++;
         this.name = name;
+        this.observer = observer;
     }
 
     public int getPlayerID() {
@@ -23,4 +31,14 @@ public class Player {
     public String getName() {
         return name;
     }
+    public void setName(String newName) {
+        name = newName;
+    }
+
+    public void poke() { // tells player his turn has come
+
+    }
+
+    public boolean expectsTouchInput() { return false; }
+
 }

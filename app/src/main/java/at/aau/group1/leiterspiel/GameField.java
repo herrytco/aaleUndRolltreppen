@@ -11,6 +11,7 @@ public class GameField {
     public enum FieldType {DEFAULT, LADDER_START, START, FINISH};
     private FieldType type;
     private Point pos;
+    private boolean highlighted = false;
 
     public GameField() {
         pos = new Point();
@@ -28,5 +29,13 @@ public class GameField {
 
     public FieldType getType() {
         return type;
+    }
+
+    public boolean isHighlighted() {
+        return highlighted;
+    }
+
+    public void setHighlighted(boolean highlighted) {
+        this.highlighted = highlighted;
     }
 }
