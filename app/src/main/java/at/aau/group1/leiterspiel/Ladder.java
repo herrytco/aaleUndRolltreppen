@@ -21,6 +21,10 @@ public class Ladder {
         this.endField = endField;
     }
 
+    public LadderType getType() {
+        return type;
+    }
+
     public int getStartField() {
         return startField;
     }

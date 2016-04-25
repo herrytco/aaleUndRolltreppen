@@ -3,6 +3,7 @@ package at.aau.group1.leiterspiel;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Created by Igor on 18.04.2016.
@@ -25,14 +26,34 @@ public class GameBoard {
         this.ladders = ladders;
         this.pieces = pieces;
         this.fields = new GameField[numberOfFields];
+        Arrays.fill(fields, new GameField());
     }
 
     public void setNumberOfFields(int number) {
         this.numberOfFields = number;
         this.fields = new GameField[this.numberOfFields];
+        Arrays.fill(fields, new GameField());
     }
 
-    public void addLadder(Ladder ladder) { this.ladders.add(ladder); }
+    public GameField[] getFields() {
+        return fields;
+    }
+
+    public ArrayList<Ladder> getLadders() {
+        return ladders;
+    }
+
+    public ArrayList<Piece> getPieces() {
+        return pieces;
+    }
+
+    public int getNumberOfFields() {
+        return numberOfFields;
+    }
+
+    public void addLadder(Ladder ladder) {
+        this.ladders.add(ladder);
+    }
 
     public void addPiece(Piece piece) { this.pieces.add(piece); }
 
@@ -56,6 +77,7 @@ public class GameBoard {
 
         // checks if the goal will be reached
         if (currentField + fields == numberOfFields-1) { // TODO end the game properly
+            currentPiece.setField(numberOfFields-1);
             Log.d("Tag", "Game ended. Winner is player "+playerID);
             return true;
         } else if (currentField + fields >= numberOfFields) { // TODO specify rules
@@ -80,32 +102,19 @@ public class GameBoard {
         return false;
     }
 
-    private Piece getPieceOnField(int field) {
+    public ArrayList<Piece> getPiecesOnField(int field) {
+        ArrayList<Piece> pieces = new ArrayList<Piece>();
         for (Piece piece: pieces) {
-            if (field == piece.getField()) return piece;
+            if (field == piece.getField()) pieces.add(piece);
         }
-        return null;
+        return pieces;
     }
 
-    private Ladder getLadderOnField(int field) {
+    public Ladder getLadderOnField(int field) {
         for (Ladder ladder: ladders) {
             if (field == ladder.getStartField() || field == ladder.getEndField()) return ladder;
         }
         return null;
-    }
-
-    public void printState() {
-        int width = 10;
-        for (int field=0; field<numberOfFields; field++) {
-            Piece tempPiece = getPieceOnField(field);
-            Ladder tempLadder = getLadderOnField(field);
-
-            if (tempPiece != null) System.out.print(tempPiece.getPlayerID()+" ");
-            else if (tempLadder != null) System.out.print("L ");
-            else System.out.print("_ ");
-
-            if (field+1 % width == 0) System.out.println("");
-        }
     }
 
 }

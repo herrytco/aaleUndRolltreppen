@@ -1,20 +1,32 @@
 package at.aau.group1.leiterspiel;
 
+import android.graphics.Point;
+
 /**
  * Created by Igor on 18.04.2016.
  */
 public class GameField {
 
     // attributes for graphical representation
-    public enum FieldType {DEFAULT, LADDER_START, LADDER_END, START, FINISH};
+    public enum FieldType {DEFAULT, LADDER_START, START, FINISH};
     private FieldType type;
-    private int x; // x and y coordinate on the game board
-    private int y;
+    private Point pos;
 
     public GameField() {
+        pos = new Point();
         type = FieldType.DEFAULT;
-        x = 0;
-        y = 0;
     }
 
+    public GameField(Point pos, FieldType type) {
+        this.pos = pos;
+        this.type = type;
+    }
+
+    public Point getPos() {
+        return pos;
+    }
+
+    public FieldType getType() {
+        return type;
+    }
 }

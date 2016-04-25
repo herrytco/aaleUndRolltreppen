@@ -50,7 +50,9 @@ public class GameManager {
         gameBoard.addPiece(new Piece(player.getPlayerID()));
     }
 
-    public void setNumberOfFields(int fields) { gameBoard.setNumberOfFields(fields); }
+//    public void setNumberOfFields(int fields) { gameBoard.setNumberOfFields(fields); }
+
+    public GameBoard getGameBoard() { return gameBoard; }
 
     public void addLadder(Ladder ladder) { gameBoard.addLadder(ladder); }
 
