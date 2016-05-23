@@ -1,4 +1,4 @@
-package at.aau.group1.leiterspiel;
+package at.aau.group1.leiterspiel.Game;
 
 import android.graphics.Point;
 
@@ -46,7 +46,7 @@ public class Snake {
         return quadraticBezier(tStart, tMid, tEnd, pointsPerTwist, tPoint);
     }
 
-    // TODO refactor/merge to universal bezier calculator
+    // TODO maybe refactor/merge to universal bezier calculator
     private Point linearBezier(Point start, Point end, int steps, int currentStep) {
         double stepSize = 1.0/steps;
         double t = currentStep * stepSize;

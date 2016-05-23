@@ -1,6 +1,5 @@
-package at.aau.group1.leiterspiel;
+package at.aau.group1.leiterspiel.Game;
 
-import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 

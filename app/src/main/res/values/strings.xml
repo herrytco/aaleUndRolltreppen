@@ -8,4 +8,9 @@
     <string name="online">Online</string>
     <string name="default_name">Name</string>
     <string name="press_back_again">Press back again to end the game</string>
+    <string name="help">Hilfe</string>
+    <string name="forbid_cheats">Schummeln verbieten</string>
+    <string name="allow_cheats">Schummeln erlauben</string>
+    <string name="somebody_cheated">hat geschummelt!</string>
+    <string name="nobody">Niemand</string>
 </resources>

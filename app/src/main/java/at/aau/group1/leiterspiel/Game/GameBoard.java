@@ -1,4 +1,4 @@
-package at.aau.group1.leiterspiel;
+package at.aau.group1.leiterspiel.Game;
 
 import android.graphics.Point;
 import android.util.Log;
@@ -93,7 +93,7 @@ public class GameBoard {
             currentField += fields;
             gameEnded = true;
             Log.d("Tag", "Game ended. Winner is player "+playerID);
-        } else if (currentField + fields >= numberOfFields) { // TODO specify rules
+        } else if (currentField + fields >= numberOfFields) {
             // do nothing in case the goal would be overshot
             return false;
         } else {
@@ -118,6 +118,36 @@ public class GameBoard {
 
         Log.d("Tag", "Player " + playerID + " moved from field " + previousField + " to " + currentField);
         return gameEnded;
+    }
+
+    /**
+     * Checks if the given move would end the game
+     *
+     * @param playerID ID of the player
+     * @param fields number of fields the piece would move
+     * @return true if the move would end the game, otherwise false
+     */
+    public boolean checkWinningMove(int playerID, int fields) {
+        for (Piece p: pieces) {
+            if (p.getPlayerID() == playerID) {
+                return p.getField() + fields == getNumberOfFields()-1;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Rollback a cheater's last move.
+     *
+     * @param cheaterID ID of the cheater
+     * @param fields number of fields to go back
+     */
+    public void revertMove(int cheaterID, int fields) {
+        for (Piece p: pieces) {
+            if (p.getPlayerID() == cheaterID) {
+                p.setField(p.getField()-fields);
+            }
+        }
     }
 
     /**

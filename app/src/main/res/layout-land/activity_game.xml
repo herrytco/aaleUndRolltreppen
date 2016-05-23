@@ -1,73 +1,96 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    tools:context="at.aau.group1.leiterspiel.GameActivity"
-    android:orientation="horizontal">
+    tools:context="at.aau.group1.leiterspiel.GameActivity">
 
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
+    <!-- <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/gameCanvas"
-        android:layout_weight="50"
-        tools:context="at.aau.group1.leiterspiel.GameActivity"
-        android:orientation="horizontal">
+        android:src="@drawable/bg"
+        android:scaleType="centerCrop" /> -->
 
-    </LinearLayout>
-
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
+    <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:id="@+id/gameUI"
-        android:layout_weight="50"
-        tools:context="at.aau.group1.leiterspiel.GameActivity"
-        android:orientation="vertical">
-
-        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:tools="http://schemas.android.com/tools"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:layout_weight="30"
-            tools:context="at.aau.group1.leiterspiel.GameActivity"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="fill_parent"
-                android:layout_height="match_parent"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="Large Text"
-                android:id="@+id/statusView"
-                android:layout_gravity="center"
-                android:textAlignment="center"
-                android:gravity="center" />
-        </LinearLayout>
+        android:orientation="horizontal">
 
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:tools="http://schemas.android.com/tools"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:gravity="center"
-            android:layout_weight="70"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
-            android:paddingTop="5dp"
-            android:paddingBottom="5dp"
+            android:id="@+id/gameCanvas"
+            android:layout_weight="50"
+            tools:context="at.aau.group1.leiterspiel.GameActivity"
+            android:orientation="horizontal">
+
+        </LinearLayout>
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:id="@+id/gameUI"
+            android:layout_weight="50"
             tools:context="at.aau.group1.leiterspiel.GameActivity"
             android:orientation="vertical">
 
-            <ImageButton
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:adjustViewBounds="true"
-                android:clickable="true"
-                android:enabled="true"
-                android:onClick="rollDice"
-                android:id="@+id/diceButton"
-                android:background="@drawable/dice_1" />
-        </LinearLayout>
-    </LinearLayout>
+            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_weight="30"
+                android:gravity="center"
+                tools:context="at.aau.group1.leiterspiel.GameActivity"
+                android:orientation="vertical">
 
-</LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:text="Large Text"
+                    android:id="@+id/statusView"
+                    android:layout_gravity="center"
+                    android:textAlignment="center"
+                    android:gravity="center" />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="40dp"
+                    android:onClick="checkForCheat"
+                    android:id="@+id/cheatCheckButton"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:textColor="#ff0000"
+                    android:textStyle="bold"
+                    android:text="!"/>
+            </LinearLayout>
+
+            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:layout_weight="70"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                tools:context="at.aau.group1.leiterspiel.GameActivity"
+                android:orientation="vertical">
+
+                <ImageButton
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:adjustViewBounds="true"
+                    android:clickable="true"
+                    android:enabled="true"
+                    android:onClick="rollDice"
+                    android:id="@+id/diceButton"
+                    android:background="@drawable/dice_1" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+</RelativeLayout>

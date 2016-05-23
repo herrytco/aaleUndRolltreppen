@@ -1,12 +1,9 @@
-package at.aau.group1.leiterspiel;
+package at.aau.group1.leiterspiel.Game;
 
 import android.graphics.Point;
 import android.util.Log;
 
 import java.util.ArrayList;
-import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * Created by Igor on 18.04.2016.
@@ -20,6 +17,10 @@ public class GameManager implements IPlayerObserver, ITouchObserver {
     private int activePlayer;
     private int minPlayerID;
     private boolean playerRolled = false;
+    private int latestDiceResult = 0;
+    private boolean cheatsEnabled = false;
+    private CheatAction cheat;
+    private int cheaterID = -1;
 
     private IGameUI ui;
 
@@ -43,6 +44,10 @@ public class GameManager implements IPlayerObserver, ITouchObserver {
     private void init() {
         activePlayer = 0;
     }
+
+    public void setCheatsEnabled(boolean b) { cheatsEnabled = b; }
+
+    public boolean areCheatsEnabled() { return cheatsEnabled; }
 
     /**
      * Pokes the currently selected player to signal him to make his turn.
@@ -111,19 +116,56 @@ public class GameManager implements IPlayerObserver, ITouchObserver {
         }
         // check move validity so the player can't go back or more than 6 fields forward
         if (steps <=0 || steps > 6) return;
+        // check if the move is valid considering cheat setting
+        if (!cheatsEnabled && steps != latestDiceResult) return;
 
         if (playerID == activePlayer) {
+            if (cheatsEnabled && steps != latestDiceResult) {
+                cheat = new CheatAction(playerID, steps);
+                // make sure cheats can't be used for the last winning move
+                if (gameBoard.checkWinningMove(playerID, steps)) return;
+            }
+
             if (executeMove(playerID, steps)) { // if game has ended
                 ui.endGame();
                 this.active = false;
             } else {
-                // switching to the next player
-                if (++activePlayer >= players.size()) activePlayer = 0;
-                playerRolled = false;
-                updateUI();
-                if (active) players.get(activePlayer).poke();
+                switchToNextPlayer();
             }
         } else Log.d("Tag", "GameManager: playerID and activePlayer don't match("+playerID+"!="+activePlayer+").");
+    }
+
+    private void switchToNextPlayer() {
+        // switching to the next player
+        if (++activePlayer >= players.size()) activePlayer = 0;
+        if (activePlayer == cheaterID) { // make cheater skip one turn
+            if (++activePlayer >= players.size()) activePlayer = 0;
+            cheaterID = -1;
+        }
+        playerRolled = false;
+        // reset cheat when it's the cheating player's turn again
+        if (cheat != null && cheat.getPlayerID() == activePlayer) cheat = null;
+        updateUI();
+        if (active) players.get(activePlayer).poke();
+    }
+
+    /**
+     * Checks whether a player cheated during the last turn, and punishes the player accordingly.
+     *
+     * @return name of the cheater, or null if nobody cheated
+     */
+    public String checkForCheat() {
+        if (cheat != null) { // if someone cheated
+            // mark cheater for the next round
+            cheaterID = cheat.getPlayerID();
+            // revert move
+            gameBoard.revertMove(cheaterID, cheat.getSteps());
+            // return cheater's name
+            for (Player player: players) {
+                if (player.getPlayerID() == cheaterID) return player.getName();
+            }
+        }
+        return null;
     }
 
     /**
@@ -135,6 +177,7 @@ public class GameManager implements IPlayerObserver, ITouchObserver {
     @Override
     public int rollDice(int playerID) {
         int number = this.ui.rollDice(null); // get the rolled number
+        latestDiceResult = number;
         return number;
     }
 
@@ -144,6 +187,7 @@ public class GameManager implements IPlayerObserver, ITouchObserver {
      * @param dice value rolled by the dice
      */
     public void highlightField(int dice) {
+        latestDiceResult = dice;
         // highlight the target field
         Piece piece = getGameBoard().getPieceOfPlayer( players.get(activePlayer).getPlayerID() );
         int field = dice;

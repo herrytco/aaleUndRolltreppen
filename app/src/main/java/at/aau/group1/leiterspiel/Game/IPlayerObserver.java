@@ -1,4 +1,4 @@
-package at.aau.group1.leiterspiel;
+package at.aau.group1.leiterspiel.Game;
 
 /**
  * Created by Igor on 21.04.2016.

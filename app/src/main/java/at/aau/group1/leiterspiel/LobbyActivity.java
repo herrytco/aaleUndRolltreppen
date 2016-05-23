@@ -46,6 +46,9 @@ public class LobbyActivity extends AppCompatActivity {
     private EditText playerName3;
     private EditText playerName4;
     private EditText playerName5;
+    private Button cheatToggleButton;
+
+    private boolean cheatsEnabled = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +73,7 @@ public class LobbyActivity extends AppCompatActivity {
         playerName3 = (EditText) findViewById(R.id.playerName3);
         playerName4 = (EditText) findViewById(R.id.playerName4);
         playerName5 = (EditText) findViewById(R.id.playerName5);
+        cheatToggleButton = (Button) findViewById(R.id.cheatToggleButton);
 
         init();
     }
@@ -95,8 +99,17 @@ public class LobbyActivity extends AppCompatActivity {
         intent.putExtra("PlayerSelection", playerSelection);
         intent.putExtra("PlayerNames", playerNames);
         intent.putExtra("PlayerTypes", playerTypes);
+        intent.putExtra("CheatPermission", cheatsEnabled);
 
         startActivity(intent);
+    }
+
+    public void toggleCheats(View view) {
+        cheatsEnabled = !cheatsEnabled;
+        if (cheatsEnabled)
+            cheatToggleButton.setText(getResources().getString(R.string.forbid_cheats));
+        else
+            cheatToggleButton.setText(getResources().getString(R.string.allow_cheats));
     }
 
     public void togglePlayer(View view) {

@@ -1,4 +1,4 @@
-package at.aau.group1.leiterspiel;
+package at.aau.group1.leiterspiel.Game;
 
 /**
  * Created by Igor on 22.04.2016.
@@ -20,7 +20,6 @@ public class LocalPlayer extends Player {
     public void poke() {
         super.poke();
         active = true; // lets this player instance react to touch input
-        // TODO display message or something
     }
 
     @Override

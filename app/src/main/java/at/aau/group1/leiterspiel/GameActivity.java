@@ -2,14 +2,9 @@ package at.aau.group1.leiterspiel;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.PictureDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,10 +16,16 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import at.aau.group1.leiterspiel.Game.BotPlayer;
+import at.aau.group1.leiterspiel.Game.GameManager;
+import at.aau.group1.leiterspiel.Game.IGameUI;
+import at.aau.group1.leiterspiel.Game.Ladder;
+import at.aau.group1.leiterspiel.Game.LocalPlayer;
+import at.aau.group1.leiterspiel.Game.Player;
 
 public class GameActivity extends AppCompatActivity implements IGameUI {
 
@@ -44,13 +45,16 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     private int canvasWidth = 512;
     private int canvasHeight = 512;
     private Bitmap bmp;
-    private LinearLayout layout;
-    private TextView statusView;
-    private ImageButton diceButton;
     private int diceResult = 0;
     private String status;
     private static boolean uiChanged = true;
     private static boolean uiEnabled = false;
+
+    // UI elements
+    private LinearLayout layout;
+    private TextView statusView;
+    private ImageButton diceButton;
+    private Button cheatButton;
 
     // static values to make them persistent over GameActivity lifecycles
     private static GameManager gameManager;
@@ -68,6 +72,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         statusView = (TextView) findViewById(R.id.statusView);
         Typeface typeFace = Typeface.createFromAsset(getAssets(),"fonts/spongefont.ttf");
         statusView.setTypeface(typeFace);
+        cheatButton = (Button) findViewById(R.id.cheatCheckButton);
 
         canvasWidth = layout.getWidth();
         canvasHeight = layout.getHeight();
@@ -106,6 +111,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         boolean[] playerSelection = getIntent().getBooleanArrayExtra("PlayerSelection");
         String[] playerNames = getIntent().getStringArrayExtra("PlayerNames");
         String[] playerTypes = getIntent().getStringArrayExtra("PlayerTypes");
+        boolean cheatsEnabled = getIntent().getBooleanExtra("CheatPermission", false);
 
         gameManager = new GameManager(this);
         soundManager = new SoundManager(getApplicationContext());
@@ -131,6 +137,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         gameManager.addLadder(new Ladder(Ladder.LadderType.DOWN, 23, 37));
         gameManager.addLadder(new Ladder(Ladder.LadderType.UP, 39, 46));
         gameManager.addLadder(new Ladder(Ladder.LadderType.DOWN, 34, 57));
+
+        gameManager.setCheatsEnabled(cheatsEnabled);
 
         // create players based on given parameters
         Player.resetIDs(); // start counting IDs with 0 again or else GameManager gets confused
@@ -252,6 +260,9 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
 
             statusView.setText(status);
 
+            cheatButton.setEnabled(gameManager.areCheatsEnabled());
+            cheatButton.setVisibility(gameManager.areCheatsEnabled()? View.VISIBLE : View.INVISIBLE);
+
             uiChanged = false;
         }
     }
@@ -274,6 +285,15 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         gameManager.setPlayerRolled(true);
 
         return result;
+    }
+
+    public void checkForCheat(View view) {
+        String name = gameManager.checkForCheat();
+        if (name == null)
+            showStatus(getString(R.string.nobody)+" "+getString(R.string.somebody_cheated));
+        else
+            showStatus(name+" "+getString(R.string.somebody_cheated));
+        uiChanged = true;
     }
 
     /**
