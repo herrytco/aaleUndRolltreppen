@@ -1,20 +1,27 @@
 package at.aau.group1.leiterspiel;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.PictureDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -26,48 +33,50 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     private Timer graphicsTimer;
     private TimerTask drawTask;
     private boolean graphicsActive = false;
+    // framerate measurement
+    private final boolean LOG_FPS = false;
+    private long frametime = 0; // time needed to draw a frame and update the UI in ms
+    private int measuredFPS = 0;
+    private int frameCount = 0;
+    private long startTime = 0;
 
     // drawing the graphics
-    private int canvasWidth;
-    private int canvasHeight;
-    private Bitmap bg;
-    private Canvas canvas;
+    private int canvasWidth = 512;
+    private int canvasHeight = 512;
+    private Bitmap bmp;
     private LinearLayout layout;
     private TextView statusView;
-    private Button diceButton;
+    private ImageButton diceButton;
     private int diceResult = 0;
     private String status;
-    private boolean uiChanged = true;
-    private boolean uiEnabled = false;
+    private static boolean uiChanged = true;
+    private static boolean uiEnabled = false;
 
-    // style of the GameBoard
-    private final int MIN_VERTICAL_FIELDS = 3;
-    private int minHorizontalFields = 8; // sets how many fields should be aligned horizontally, in portrait mode
-    private int fieldRadius;
-    private int horizontalFields; // number of fields in the horizontal lines
-    private int verticalFields; // number of fields aligned vertically, connecting the horizontal lines
+    // static values to make them persistent over GameActivity lifecycles
+    private static GameManager gameManager;
+    private static SoundManager soundManager;
+    private static GamePainter gamePainter;
+    private static boolean gameInitialized = false;
 
-    private GameManager gameManager;
-    private SoundManager soundManager;
+    private long lastBackPress = 0;
 
-    // interaction
-    TextView diceView;
-    Random random = new Random();
+    private Random random = new Random();
 
     private void init() {
         layout = (LinearLayout) findViewById(R.id.gameCanvas);
-        diceView = (TextView) findViewById(R.id.diceTextView);
-        diceButton = (Button) findViewById(R.id.diceButton);
+        diceButton = (ImageButton) findViewById(R.id.diceButton);
         statusView = (TextView) findViewById(R.id.statusView);
+        Typeface typeFace = Typeface.createFromAsset(getAssets(),"fonts/spongefont.ttf");
+        statusView.setTypeface(typeFace);
 
         canvasWidth = layout.getWidth();
         canvasHeight = layout.getHeight();
-        bg = Bitmap.createBitmap(canvasWidth, canvasHeight, Bitmap.Config.ARGB_8888);
-        canvas = new Canvas(bg);
-        Log.d("Tag", "canvas size set to " + canvasWidth + "x" + canvasHeight);
+        Log.d("Init", "canvas size set to " + canvasWidth + "x" + canvasHeight);
+        gamePainter.setDimensions(canvasWidth, canvasHeight);
 
         random.setSeed(System.currentTimeMillis());
 
+        // touch listener for player input
         layout.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -80,6 +89,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
                 return false;
             }
         });
+
+        lastBackPress = System.currentTimeMillis();
     }
 
     @Override
@@ -87,25 +98,55 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game);
 
+        if (!gameInitialized) initGame();
+    }
+
+    private void initGame() {
+        // get the intent call parameters
+        boolean[] playerSelection = getIntent().getBooleanArrayExtra("PlayerSelection");
+        String[] playerNames = getIntent().getStringArrayExtra("PlayerNames");
+        String[] playerTypes = getIntent().getStringArrayExtra("PlayerTypes");
+
         gameManager = new GameManager(this);
         soundManager = new SoundManager(getApplicationContext());
+        gamePainter = new GamePainter(canvasWidth, canvasHeight);
 
-        // creating a tiny test game
+        // set graphics
+        gamePainter.setBackgroundImg(BitmapFactory.decodeResource(getResources(), R.drawable.bg_tile));
+        gamePainter.setFieldImg(BitmapFactory.decodeResource(getResources(), R.drawable.field),
+                BitmapFactory.decodeResource(getResources(), R.drawable.field_high));
+        gamePainter.setLadderFieldImg(BitmapFactory.decodeResource(getResources(), R.drawable.field_up),
+                BitmapFactory.decodeResource(getResources(), R.drawable.field_down));
+        gamePainter.addPieceImg(BitmapFactory.decodeResource(getResources(), R.drawable.patrick));
+        gamePainter.addPieceImg(BitmapFactory.decodeResource(getResources(), R.drawable.sponge));
+        gamePainter.addPieceImg(BitmapFactory.decodeResource(getResources(), R.drawable.krabs));
+        gamePainter.addPieceImg(BitmapFactory.decodeResource(getResources(), R.drawable.squid));
+        gamePainter.addPieceImg(BitmapFactory.decodeResource(getResources(), R.drawable.plankton));
+        gamePainter.addPieceImg(BitmapFactory.decodeResource(getResources(), R.drawable.sandy));
+
+        // create a game board
         gameManager.getGameBoard().setNumberOfFields(60);
-        gameManager.addLadder(new Ladder(Ladder.LadderType.BIDIRECTIONAL, 3, 15));
+        gameManager.addLadder(new Ladder(Ladder.LadderType.UP, 13, 26));
+        gameManager.addLadder(new Ladder(Ladder.LadderType.DOWN, 5, 29));
         gameManager.addLadder(new Ladder(Ladder.LadderType.DOWN, 23, 37));
         gameManager.addLadder(new Ladder(Ladder.LadderType.UP, 39, 46));
         gameManager.addLadder(new Ladder(Ladder.LadderType.DOWN, 34, 57));
-        gameManager.addLadder(new Ladder(Ladder.LadderType.UP, 13, 26));
 
-        Player player0 = new LocalPlayer("Patrick", gameManager);
-        Player player1 = new BotPlayer(gameManager);
-        Player player2 = new BotPlayer(gameManager);
-        Player player3 = new BotPlayer(gameManager);
-        gameManager.addPlayer(player0);
-        gameManager.addPlayer(player1);
-        gameManager.addPlayer(player2);
-        gameManager.addPlayer(player3);
+        // create players based on given parameters
+        Player.resetIDs(); // start counting IDs with 0 again or else GameManager gets confused
+        for (int n=0; n<LobbyActivity.MAX_PLAYERS; n++) {
+            if (playerSelection[n]) {
+                Player player = null;
+                Log.d("Tag", "PlayerType: "+playerTypes[n]);
+                if (playerTypes[n].equals(LobbyActivity.BOT))
+                    player = new BotPlayer(gameManager);
+                if (playerTypes[n].equals(LobbyActivity.LOCAL))
+                    player = new LocalPlayer(playerNames[n], gameManager);
+                gameManager.addPlayer(player);
+            }
+        }
+
+        gameInitialized = true;
     }
 
     @Override
@@ -114,7 +155,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
 
         init();
 
-        buildBoard(); // generate game board
+        gamePainter.buildBoard(gameManager.getGameBoard()); // generate game board
 
         runGraphics();
 
@@ -132,6 +173,21 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         graphicsActive = false;
     }
 
+    @Override
+    public void onBackPressed() {
+        if (System.currentTimeMillis() - lastBackPress > 3000) { // create warning
+            Toast.makeText(getApplicationContext(), getResources().getString(R.string.press_back_again), Toast.LENGTH_SHORT).show();
+            lastBackPress = System.currentTimeMillis();
+        } else { // kill game session and go back to lobby
+            gameInitialized = false;
+            super.onBackPressed();
+        }
+    }
+
+    /**
+     * If currently not active, the thread drawing the game graphics onto the canvas is being
+     * started. The framerate depends on the variable FPS.
+     */
     private void runGraphics() {
         if (!graphicsActive) {
             graphicsTimer = new Timer();
@@ -151,253 +207,62 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         }
     }
 
+    /**
+     * When called, clears the canvas and draws the current state of the game once again.
+     * Afterwards the updated bitmap is being displayed.
+     */
     private void drawGame() {
-        clearCanvas(); // clear previous frame
-        drawBoard(); // draw the board on the canvas
-        drawPieces(); // draw the players on the canvas
-        layout.setBackground(new BitmapDrawable(bg)); // display updated canvas
+        long start = System.currentTimeMillis();
+        if (startTime == 0) startTime = start;
+
+        gamePainter.clearCanvas(); // clear previous frame
+        gamePainter.drawBoard(gameManager.getGameBoard()); // draw the board on the canvas
+        gamePainter.drawPieces(gameManager.getGameBoard()); // draw the players on the canvas
+        layout.setBackground(new BitmapDrawable(gamePainter.getFrame())); // display updated canvas
         updateUI();
+
+        long end = System.currentTimeMillis();
+        frametime = end - start;
+        frameCount++;
+        if (end - startTime >= 1000) {
+            int oldFPS = measuredFPS;
+            measuredFPS = frameCount;
+            frameCount = 0;
+            startTime = 0;
+            if (oldFPS != measuredFPS && LOG_FPS) Log.d("FPS", measuredFPS+"fps, last frametime: "+frametime+"ms");
+        }
     }
 
+    /**
+     * Only the UI thread is able to access the different UI elements, so the changes to the UI
+     * are being requested, and this method then applies the changes.
+     * The flag uiChanged makes sure the UI gets only updated when necessary.
+     */
     private void updateUI() {
         if (uiChanged) {
-            diceView.setText(diceResult+"");
-            statusView.setText(status);
+            if (diceResult == 1) diceButton.setBackground(getResources().getDrawable(R.drawable.dice_1));
+            if (diceResult == 2) diceButton.setBackground(getResources().getDrawable(R.drawable.dice_2));
+            if (diceResult == 3) diceButton.setBackground(getResources().getDrawable(R.drawable.dice_3));
+            if (diceResult == 4) diceButton.setBackground(getResources().getDrawable(R.drawable.dice_4));
+            if (diceResult == 5) diceButton.setBackground(getResources().getDrawable(R.drawable.dice_5));
+            if (diceResult == 6) diceButton.setBackground(getResources().getDrawable(R.drawable.dice_6));
             diceButton.setEnabled(uiEnabled);
+            if (uiEnabled) diceButton.setAlpha(1f);
+            else diceButton.setAlpha(0.5f);
+
+            statusView.setText(status);
 
             uiChanged = false;
         }
     }
 
-    private void buildBoard() {
-
-        if (canvasHeight < canvasWidth) { // if the device is in landscape mode, align more fields horizontally
-            double m = canvasWidth / canvasHeight;
-            horizontalFields = (int) (minHorizontalFields * m);
-        } else horizontalFields = minHorizontalFields;
-
-        fieldRadius = (int) (canvasWidth*0.9 / horizontalFields / 3);
-        int maxVerticalFields = (int) (canvasHeight*0.9 / (fieldRadius*3));
-        int remainingFields = gameManager.getGameBoard().getNumberOfFields() - maxVerticalFields;
-        int layers = (int) Math.ceil(remainingFields / horizontalFields);
-        verticalFields = (int) Math.max((gameManager.getGameBoard().getNumberOfFields() - layers * horizontalFields) /
-                layers, MIN_VERTICAL_FIELDS);
-
-        // 1 layer = 1 horizontal line + 1 vertical line
-        int layerWidth = (int) (canvasWidth * 0.85);
-        int layerHeight = (int) (canvasHeight * 0.9) / layers;
-//        int layerHeight = (int) Math.max(verticalFields * fieldRadius*1.5, canvasHeight * 0.9 / layers);
-        int yOffset = (canvasHeight - layers*layerHeight)/2;
-
-        int currentField = 0;
-        boolean direction = false; // true = left, false = right
-        for (int n=0; n<layers; n++) {
-            Point p0, p1;
-            // calculate horizontal line of fields
-            p0 = new Point((canvasWidth - layerWidth)/2, yOffset + (n * layerHeight)); // left-most point
-            p1 = new Point(p0.x + layerWidth, p0.y); // right-most point
-            for (int h=1; h<= horizontalFields; h++) {
-                // end if all fields were calculated
-                if (currentField+1 > gameManager.getGameBoard().getNumberOfFields()) break;
-
-                // calculate the actual position of the field
-                Point pos;
-                if(!direction) pos = linearBezier(p0, p1, horizontalFields + 1, h);
-                else pos = linearBezier(p1, p0, horizontalFields + 1, h);
-
-                storeField(pos, currentField);
-
-                currentField++;
-            }
-
-            // vertical part of the layer
-            if(!direction) { // if the fields should be on the left or right edge of the canvas
-                p0 = new Point(linearBezier(p0, p1, horizontalFields +1, horizontalFields +1).x, yOffset + (n * layerHeight));
-                p1 = new Point(p0.x, p0.y + layerHeight);
-            } else {
-                p0 = new Point(linearBezier(p0, p1, horizontalFields +1, 0).x, yOffset + (n * layerHeight));
-                p1 = new Point(p0.x, p0.y + layerHeight);
-            }
-            for (int v=0; v < verticalFields; v++) {
-                // end if all fields were calculated
-                if (currentField+1 > gameManager.getGameBoard().getNumberOfFields()) break;
-
-                Point pos = linearBezier(p0, p1, verticalFields - 1, v);
-
-                storeField(pos, currentField);
-
-                currentField++;
-            }
-
-            direction = !direction;
-        }
-
-    }
-
-    private void storeField(Point pos, int currentField) {
-        // field type
-        GameField.FieldType type = GameField.FieldType.DEFAULT;
-        if (currentField==0)
-            type = GameField.FieldType.START;
-        else if (currentField==gameManager.getGameBoard().getNumberOfFields()-1)
-            type = GameField.FieldType.FINISH;
-        else {
-            Ladder ladder = gameManager.getGameBoard().getLadderOnField(currentField);
-            if (ladder != null && currentField==ladder.getStartField())
-                type = GameField.FieldType.LADDER_START;
-        }
-        // store the field in the array
-        gameManager.getGameBoard().getFields()[currentField] = new GameField(pos, type);
-    }
-
-    private void clearCanvas() {
-        Paint paint = new Paint();
-        paint.setColor(Color.WHITE);
-        paint.setStyle(Paint.Style.FILL_AND_STROKE);
-        canvas.drawRect(0, 0, canvasWidth - 1, canvasHeight - 1, paint);
-        paint.setColor(Color.BLACK);
-        paint.setStyle(Paint.Style.STROKE);
-        canvas.drawRect(0, 0, canvasWidth - 1, canvasHeight - 1, paint);
-    }
-
-    private void drawBoard() {
-        GameField[] fields = gameManager.getGameBoard().getFields();
-        Paint paint = new Paint();
-        paint.setTextAlign(Paint.Align.CENTER);
-        paint.setTextSize(fieldRadius);
-
-        // draw the fields
-        for (GameField field:fields) {
-            // color and style
-            if (field.getType() == GameField.FieldType.DEFAULT) {
-                paint.setColor(Color.BLACK);
-                paint.setStyle(Paint.Style.STROKE);
-            } else if (field.getType() == GameField.FieldType.START) {
-                paint.setColor(Color.GRAY);
-                paint.setStyle(Paint.Style.FILL);
-            } else if (field.getType() == GameField.FieldType.FINISH) {
-                paint.setColor(Color.CYAN);
-                paint.setStyle(Paint.Style.FILL);
-            }
-
-            if (field.isHighlighted()) {
-                paint.setColor(Color.GREEN);
-                paint.setStyle(Paint.Style.FILL);
-                canvas.drawCircle(field.getPos().x, canvasHeight - field.getPos().y, (int) (fieldRadius*1.2), paint);
-            }
-
-            // invert Y coordinate because 2D Y axis is inverted
-            canvas.drawCircle(field.getPos().x, canvasHeight - field.getPos().y, fieldRadius, paint);
-        }
-        // draw the ladders
-        for (Ladder ladder:gameManager.getGameBoard().getLadders()) {
-            GameField start = gameManager.getGameBoard().getFields()[ladder.getStartField()];
-            GameField end = gameManager.getGameBoard().getFields()[ladder.getEndField()];
-
-            paint.setColor(Color.YELLOW);
-            paint.setStyle(Paint.Style.FILL);
-            canvas.drawCircle(start.getPos().x, canvasHeight - start.getPos().y, fieldRadius-1, paint);
-            canvas.drawCircle(end.getPos().x, canvasHeight - end.getPos().y, fieldRadius-1, paint);
-            paint.setColor(Color.BLACK);
-            paint.setStyle(Paint.Style.STROKE);
-            canvas.drawLine(start.getPos().x, canvasHeight - start.getPos().y,
-                    end.getPos().x, canvasHeight - end.getPos().y,
-                    paint);
-
-            paint.setStyle(Paint.Style.FILL_AND_STROKE);
-            if (ladder.getType() == Ladder.LadderType.UP) // Rolltreppe
-                canvas.drawText("R", start.getPos().x, canvasHeight - start.getPos().y, paint);
-            if (ladder.getType() == Ladder.LadderType.DOWN) // Aal
-                canvas.drawText("A", start.getPos().x, canvasHeight - start.getPos().y, paint);
-        }
-
-//        // 1 layer = 1 horizontal line + 1 vertical line
-//        int layers = (int) Math.ceil( (double) gameManager.getGameBoard().getNumberOfFields() /
-//                (double) (horizontalFields + verticalFields) );
-//        int layerWidth = (int) (canvasWidth * 0.8);
-//        int layerHeight = (int) (canvasHeight * 0.9) / layers;
-//        int fieldRadius;
-//        if(canvasWidth < canvasHeight) fieldRadius = layerWidth/(horizontalFields +2)/2;
-//        else fieldRadius = layerHeight / verticalFields / 2;
-//
-//        int currentField = 0;
-//        boolean direction = false; // true = left, false = right
-//        for (int n=0; n<layers; n++) {
-//            Point p0, p1;
-//            // draw horizontal line of fields
-//            p0 = new Point((canvasWidth - layerWidth)/2, padding + (n * layerHeight));
-//            p1 = new Point(p0.x + layerWidth, p0.y);
-//            for (int h=1; h<= horizontalFields; h++) {
-//                if (++currentField > gameManager.getGameBoard().getNumberOfFields()) break;
-//
-//                Point pos;
-//                if(!direction) pos = linearBezier(p0, p1, horizontalFields +1, h);
-//                else pos = linearBezier(p1, p0, horizontalFields +1, h);
-//
-//                // draw the field
-//                if (gameManager.getGameBoard().getLadderOnField(currentField)!=null) {
-//                    paint.setColor(Color.BLUE);
-//                    paint.setStyle(Paint.Style.FILL);
-//                } else {
-//                    paint.setColor(Color.BLACK);
-//                    paint.setStyle(Paint.Style.STROKE);
-//                }
-//                canvas.drawCircle(pos.x, pos.y, fieldRadius, paint);
-//            }
-//
-//            // draw vertical part of the layer
-//            if(!direction) {
-//                p0 = new Point(linearBezier(p0, p1, horizontalFields +1, horizontalFields +1).x, padding + (n * layerHeight));
-//                p1 = new Point(p0.x, p0.y + layerHeight);
-//            } else {
-//                p0 = new Point(linearBezier(p0, p1, horizontalFields +1, 0).x, padding + (n * layerHeight));
-//                p1 = new Point(p0.x, p0.y + layerHeight);
-//            }
-//            for (int v=0; v< verticalFields; v++) {
-//                if (++currentField > gameManager.getGameBoard().getNumberOfFields()) break;
-//
-//                Point pos = linearBezier(p0, p1, verticalFields -1, v);
-//
-//                // draw the field
-//                if (gameManager.getGameBoard().getLadderOnField(currentField)!=null) {
-//                    paint.setColor(Color.BLUE);
-//                    paint.setStyle(Paint.Style.FILL);
-//                } else {
-//                    paint.setColor(Color.BLACK);
-//                    paint.setStyle(Paint.Style.STROKE);
-//                }
-//                canvas.drawCircle(pos.x, pos.y, fieldRadius, paint);
-//            }
-//
-//            direction = !direction;
-//        }
-
-//        canvas.drawRect(0,0,100,100,paint);
-    }
-
-    private void drawPieces() {
-        Paint paint = new Paint();
-        paint.setTextSize((int) (fieldRadius * 1.7));
-        paint.setTextAlign(Paint.Align.CENTER);
-        paint.setColor(Color.BLACK);
-        paint.setStyle(Paint.Style.FILL_AND_STROKE);
-
-        for (Piece piece:gameManager.getGameBoard().getPieces()) {
-            Point pos = gameManager.getGameBoard().getFields()[piece.getField()].getPos();
-            canvas.drawText(piece.getPlayerID()+"", pos.x, canvasHeight - pos.y + paint.getTextSize()/2.5f, paint);
-        }
-    }
-
-    private Point linearBezier(Point start, Point end, int steps, int currentStep) {
-        double stepSize = 1.0/steps;
-        double t = currentStep * stepSize;
-
-        return new Point(
-                (int)( (1-t)*start.x + t*end.x ),
-                (int)( (1-t)*start.y + t*end.y )
-        );
-    }
-
+    /**
+     * Rolls a virtual dice, requests a UI update and tells the GameManager to highlight the rolled
+     * field(which depends on the currently active player).
+     *
+     * @param view The view who called this method via onClick(), or null(isn't needed anyway)
+     * @return The number rolled with the dice
+     */
     public int rollDice(View view) {
         soundManager.playDiceSound();
 
@@ -406,28 +271,43 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         uiChanged = true;
 
         gameManager.highlightField(result);
+        gameManager.setPlayerRolled(true);
 
         return result;
     }
 
+    /**
+     * Disables certain UI elements which are only used by a LocalPlayer for touch input.
+     */
     @Override
     public void disableUI() {
         if (uiEnabled) uiChanged = true;
         uiEnabled = false;
     }
 
+    /**
+     * Enables certain UI elements which are only used by a LocalPlayer for touch input.
+     */
     @Override
     public void enableUI() {
         if (!uiEnabled) uiChanged = true;
         uiEnabled = true;
     }
 
+    /**
+     * Updates the status TextView.
+     *
+     * @param status The String to be displayed
+     */
     @Override
     public void showStatus(String status) {
         uiChanged = true;
         this.status = status;
     }
 
+    /**
+     * Calls showStatus() with the game_finished string.
+     */
     @Override
     public void endGame() {
         this.disableUI();

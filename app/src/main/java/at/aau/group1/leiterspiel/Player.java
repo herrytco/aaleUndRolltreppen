@@ -35,10 +35,17 @@ public abstract class Player {
         name = newName;
     }
 
-    public void poke() { // tells player his turn has come
+    /**
+     * Tells player it's his turn.
+     */
+    public void poke() {
 
     }
 
+    /**
+     * @return true if this Player reacts to touch input, otherwise false
+     */
     public boolean expectsTouchInput() { return false; }
 
+    public static void resetIDs() { nextID = 0; }
 }

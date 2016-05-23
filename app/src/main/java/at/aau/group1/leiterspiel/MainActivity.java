@@ -3,6 +3,7 @@ package at.aau.group1.leiterspiel;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -17,7 +18,11 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
 
         // Start game(GameActivity) immediately
-        Intent intent = new Intent(getApplicationContext(), GameActivity.class);
+//        startLobby(null);
+    }
+
+    public void startLobby(View view) {
+        Intent intent = new Intent(getApplicationContext(), LobbyActivity.class);
         startActivity(intent);
     }
 }
