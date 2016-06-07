@@ -2,13 +2,14 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_bitmap">
 
-    <ImageView
+    <!--ImageView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="fill_parent"
         android:src="@drawable/bg"
-        android:scaleType="centerCrop" />
+        android:scaleType="centerCrop" /-->
 
     <LinearLayout
         android:orientation="vertical"
@@ -49,7 +50,8 @@
                     android:text="@string/bot"
                     android:id="@+id/playerType0"
                     android:onClick="togglePlayerType"
-                    android:layout_gravity="center_vertical" />
+                    android:layout_gravity="center_vertical"
+                    android:background="#ffffff" />
 
                 <EditText
                     android:layout_width="match_parent"
@@ -90,7 +92,8 @@
                     android:text="@string/bot"
                     android:id="@+id/playerType1"
                     android:onClick="togglePlayerType"
-                    android:layout_gravity="center_vertical" />
+                    android:layout_gravity="center_vertical"
+                    android:background="#ffffff" />
 
                 <EditText
                     android:layout_width="match_parent"
@@ -131,7 +134,8 @@
                     android:text="@string/bot"
                     android:id="@+id/playerType2"
                     android:onClick="togglePlayerType"
-                    android:layout_gravity="center_vertical" />
+                    android:layout_gravity="center_vertical"
+                    android:background="#ffffff" />
 
                 <EditText
                     android:layout_width="match_parent"
@@ -172,7 +176,8 @@
                     android:text="@string/bot"
                     android:id="@+id/playerType3"
                     android:onClick="togglePlayerType"
-                    android:layout_gravity="center_vertical" />
+                    android:layout_gravity="center_vertical"
+                    android:background="#ffffff" />
 
                 <EditText
                     android:layout_width="match_parent"
@@ -213,7 +218,8 @@
                     android:text="@string/bot"
                     android:id="@+id/playerType4"
                     android:onClick="togglePlayerType"
-                    android:layout_gravity="center_vertical" />
+                    android:layout_gravity="center_vertical"
+                    android:background="#ffffff" />
 
                 <EditText
                     android:layout_width="match_parent"
@@ -254,7 +260,8 @@
                     android:text="@string/bot"
                     android:id="@+id/playerType5"
                     android:onClick="togglePlayerType"
-                    android:layout_gravity="center_vertical" />
+                    android:layout_gravity="center_vertical"
+                    android:background="#ffffff" />
 
                 <EditText
                     android:layout_width="match_parent"
@@ -288,15 +295,20 @@
                 android:text="@string/allow_cheats"
                 android:id="@+id/cheatToggleButton"
                 android:onClick="toggleCheats"
-                android:layout_gravity="center_horizontal" />
+                android:layout_gravity="center_horizontal"
+                android:background="@color/blue"
+                android:textColor="#ffffff" />
 
             <Button
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/start_game"
                 android:id="@+id/startButton"
+                android:layout_marginTop="1dp"
                 android:onClick="startGame"
-                android:layout_gravity="center_horizontal" />
+                android:layout_gravity="center_horizontal"
+                android:background="@color/blue"
+                android:textColor="#ffffff" />
         </LinearLayout>
 
     </LinearLayout>

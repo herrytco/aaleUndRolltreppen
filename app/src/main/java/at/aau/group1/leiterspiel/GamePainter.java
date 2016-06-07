@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.PorterDuff;
 
 import java.util.ArrayList;
 
@@ -24,7 +25,7 @@ public class GamePainter {
     private Canvas canvas;
 
     // images to be drawn on the canvas
-    private Bitmap bgTile;
+//    private Bitmap bgTile;
     private Bitmap fieldImg;
     private Bitmap scaledFieldImg;
     private Bitmap fieldHighlightImg;
@@ -47,6 +48,9 @@ public class GamePainter {
     private boolean sizeInitialized = false;
     private int horizontalFields; // number of fields in the horizontal lines
     private int verticalFields; // number of fields aligned vertically, connecting the horizontal lines
+    // for centering the gameboard on the canvas
+    private int xOffset = 0;
+    private int yOffset = 0;
 
     public GamePainter(int width, int height) {
         canvasWidth = width;
@@ -54,19 +58,21 @@ public class GamePainter {
         init();
     }
 
+    public int getXOffset() { return xOffset; }
+    public int getYOffset() { return yOffset; }
+
     private void init() {
+        bmp = null;
         bmp = Bitmap.createBitmap(canvasWidth, canvasHeight, Bitmap.Config.ARGB_8888);
         canvas = new Canvas(bmp);
+        xOffset = 0;
+        yOffset = 0;
     }
 
     public void setDimensions(int width, int height) {
         canvasWidth = width;
         canvasHeight = height;
         init();
-    }
-
-    public void setBackgroundImg(Bitmap background) {
-        bgTile = background;
     }
 
     public void setFieldImg(Bitmap field, Bitmap highlight) {
@@ -117,12 +123,14 @@ public class GamePainter {
     public void buildBoard(GameBoard gameBoard) {
 
         if (canvasHeight < canvasWidth) { // if the device is in landscape mode, align more fields horizontally
-            double m = canvasWidth / canvasHeight;
+            double m = (double) canvasWidth / (double) canvasHeight;
             horizontalFields = (int) (minHorizontalFields * m);
         } else horizontalFields = minHorizontalFields;
         // experimental
 //        if (canvasHeight < canvasWidth) {
+//            int w = canvasWidth;
 //            canvasWidth = canvasHeight;
+//            xOffset = (w-canvasWidth)/2;
 //        }
 //        horizontalFields = minHorizontalFields;
 
@@ -233,13 +241,7 @@ public class GamePainter {
      * clears the canvas by drawing a white filled rectangle over everything.
      */
     public void clearCanvas() {
-        Paint paint = new Paint();
-        paint.setColor(Color.WHITE);
-        paint.setStyle(Paint.Style.FILL_AND_STROKE);
-        canvas.drawRect(0, 0, canvasWidth - 1, canvasHeight - 1, paint);
-        paint.setColor(Color.BLACK);
-        paint.setStyle(Paint.Style.STROKE);
-        canvas.drawRect(0, 0, canvasWidth - 1, canvasHeight - 1, paint);
+        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
     }
 
     /**
@@ -254,20 +256,20 @@ public class GamePainter {
         paint.setTextSize(fieldRadius);
 
         if (boardImg!=null) {
-            canvas.drawBitmap(boardImg, 0, 0, paint);
+            canvas.drawBitmap(boardImg, xOffset, yOffset, paint);
 
             GameField[] fields = gameBoard.getFields();
                 if (fieldImg != null) { // if a field image exists then use it, or fall back to ugly graphics
                     for (GameField field: fields) {
                         if (field.isHighlighted())
-                            canvas.drawBitmap(scaledFieldHighlightImg, field.getPos().x - fieldRadius, canvasHeight - field.getPos().y - fieldRadius, paint);
+                            canvas.drawBitmap(scaledFieldHighlightImg, field.getPos().x - fieldRadius + xOffset, canvasHeight - field.getPos().y - fieldRadius - yOffset, paint);
                     }
                 } else {
                     for (GameField field: fields) {
                         if (field.isHighlighted()) {
                             paint.setColor(Color.GREEN);
                             paint.setStyle(Paint.Style.FILL);
-                            canvas.drawCircle(field.getPos().x, canvasHeight - field.getPos().y, (int) (fieldRadius * 1.2), paint);
+                            canvas.drawCircle(field.getPos().x + xOffset, canvasHeight - field.getPos().y - yOffset, (int) (fieldRadius * 1.2), paint);
                         }
                     }
                 }
@@ -282,17 +284,6 @@ public class GamePainter {
         Paint paint = new Paint();
         boardImg = Bitmap.createBitmap(canvasWidth, canvasHeight, Bitmap.Config.ARGB_8888);
         Canvas boardCanvas = new Canvas(boardImg);
-
-        // draw the background
-        if (bgTile!=null) { // if a background image exists
-            int bgWidth = bgTile.getWidth();
-            int bgHeight = bgTile.getHeight();
-            for (int x = 0; x < canvasWidth; x += bgWidth) {
-                for (int y = 0; y < canvasHeight; y += bgHeight) {
-                    boardCanvas.drawBitmap(bgTile, x, y, paint);
-                }
-            }
-        }
 
         // draw the fields
         if (fieldImg != null) { // if a field image exists then use it, or fall back to ugly graphics
@@ -427,9 +418,9 @@ public class GamePainter {
             Point imgPos = gameBoard.getFields()[piece.getField()].getPos();
             imgPos = shufflePiecePosition(imgPos, piece, pieceSize); // in case multiple pieces are on a single field, change their position a bit to keep them all visible
             if (scaledPieceImgs.size() > 0 && piece.getPlayerID() < scaledPieceImgs.size())
-                canvas.drawBitmap(scaledPieceImgs.get(piece.getPlayerID()), imgPos.x - fieldRadius, canvasHeight - imgPos.y - fieldRadius, paint);
+                canvas.drawBitmap(scaledPieceImgs.get(piece.getPlayerID()), imgPos.x - fieldRadius + xOffset, canvasHeight - imgPos.y - fieldRadius - yOffset, paint);
             else // fallback to ugly graphics
-                canvas.drawText(piece.getPlayerID()+"", imgPos.x, canvasHeight - imgPos.y + paint.getTextSize()/2.5f, paint);
+                canvas.drawText(piece.getPlayerID()+"", imgPos.x + xOffset, canvasHeight - imgPos.y + paint.getTextSize()/2.5f - yOffset, paint);
         }
     }
 

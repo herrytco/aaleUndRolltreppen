@@ -1,17 +1,13 @@
 package at.aau.group1.leiterspiel;
 
 import android.content.Intent;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.TextView;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 
 /**
@@ -100,6 +96,10 @@ public class LobbyActivity extends AppCompatActivity {
         intent.putExtra("PlayerNames", playerNames);
         intent.putExtra("PlayerTypes", playerTypes);
         intent.putExtra("CheatPermission", cheatsEnabled);
+
+        //makes system ui "inivisble"           --NOT WORKING PROPERLY YET!! HAS TO BE UPDATED!
+        int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
+        view.setSystemUiVisibility(uiOptions);
 
         startActivity(intent);
     }

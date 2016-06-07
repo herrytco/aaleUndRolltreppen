@@ -1,16 +1,18 @@
 package at.aau.group1.leiterspiel.Game;
 
 import android.graphics.Point;
+import android.util.Log;
 
 import java.util.ArrayList;
 
 /**
  * Created by Igor on 02.05.2016.
  *
- * Represents combinations of Bezier curves for (hopefully) amazing and flexible graphics
+ * Represents combinations of Bezier curves for amazing snake graphics
  */
 public class Snake {
 
+    private final int MAX_DX = 250;
     private Point start; // head
     private Point end; // tail
     private int twists;
@@ -32,15 +34,25 @@ public class Snake {
         Point tEnd = linearBezier(start, end, twists, currentTwist+1);
         Point tMid = linearBezier(tStart, tEnd, pointsPerTwist, pointsPerTwist/2);
 
-        int twistWidth = (int) Math.hypot(Math.abs(tStart.x - tEnd.x), Math.abs(tStart.y - tEnd.y));
-        if (currentTwist % 2 == 0 ^ mirror) {
-            tMid.x -= twistWidth;
-            if (start.x > end.x) tMid.y += twistWidth/2;
-            else tMid.y -= twistWidth/2;
+        int dx = start.x - end.x;
+        int dy = start.y - end.y;
+        // scaling dx, dy to a maximum
+        if (dx > MAX_DX || dy > MAX_DX) {
+            float div;
+            if (dx/MAX_DX > dy/MAX_DX) div = dx/MAX_DX;
+            else div = dy/MAX_DX;
+            if (div < 0) div = -div;
+
+            dx /= div;
+            dy /= div;
+        }
+        if (currentTwist % 2 == 0 ^ mirror) { // ^ = XOR
+            // applying vector normal( Normal = (-dy, dx) )
+            tMid.x -= dy/4;
+            tMid.y += dx/4;
         } else {
-            tMid.x += twistWidth;
-            if (start.x > end.x) tMid.y -= twistWidth/2;
-            else tMid.y += twistWidth/2;
+            tMid.x += dy/4;
+            tMid.y -= dx/4;
         }
 
         return quadraticBezier(tStart, tMid, tEnd, pointsPerTwist, tPoint);

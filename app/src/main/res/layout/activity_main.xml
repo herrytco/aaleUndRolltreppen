@@ -3,14 +3,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/bg_bitmap"
     tools:context="at.aau.group1.leiterspiel.MainActivity"
     android:baselineAligned="false">
 
-    <ImageView
+    <!--ImageView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="fill_parent"
         android:src="@drawable/bg"
-        android:scaleType="centerCrop" />
+        android:scaleType="centerCrop" /-->
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -27,22 +28,42 @@
             android:orientation="vertical"
             android:gravity="center"
             android:layout_margin="75dp">
+
             <Button
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/start_game"
                 android:id="@+id/startButton"
-                android:onClick="startLobby"
-                android:layout_gravity="center_vertical" />
+                android:onClick="startLogin"
+                android:layout_gravity="center_vertical"
+                android:background="@color/blue"
+                android:textColor="#ffffff" />
+
+            <!-- There have been changes in : enabled, onclick due to Easter Egg :D -->
 
             <Button
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/help"
                 android:id="@+id/helpButton"
-                android:onClick="showHelp"
-                android:enabled="false"
-                android:layout_gravity="center_vertical" />
+                android:enabled="true"
+                android:layout_gravity="center_vertical"
+                android:background="@color/blue"
+                android:textColor="#bbbbbb" />
+                <!-- android:onClick="showHelp"
+                android:enabled="false"/-->
+
         </LinearLayout>
+
     </LinearLayout>
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/logo"
+        android:id="@+id/imageView"
+        android:layout_marginLeft="30dp"
+        android:layout_marginRight="30dp"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="-80dp" />
 </RelativeLayout>

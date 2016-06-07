@@ -8,11 +8,13 @@ import android.graphics.drawable.BitmapDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.DragEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,7 +37,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     private TimerTask drawTask;
     private boolean graphicsActive = false;
     // framerate measurement
-    private final boolean LOG_FPS = false;
+    private final boolean LOG_FPS = true;
     private long frametime = 0; // time needed to draw a frame and update the UI in ms
     private int measuredFPS = 0;
     private int frameCount = 0;
@@ -55,12 +57,16 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     private TextView statusView;
     private ImageButton diceButton;
     private Button cheatButton;
+    private LinearLayout loadingScreen;
+    private LinearLayout uiContainer;
+    private boolean uiAlignedToBottom = false;
 
     // static values to make them persistent over GameActivity lifecycles
     private static GameManager gameManager;
     private static SoundManager soundManager;
     private static GamePainter gamePainter;
     private static boolean gameInitialized = false;
+    private static boolean gamePrepared = false;
 
     private long lastBackPress = 0;
 
@@ -70,9 +76,11 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         layout = (LinearLayout) findViewById(R.id.gameCanvas);
         diceButton = (ImageButton) findViewById(R.id.diceButton);
         statusView = (TextView) findViewById(R.id.statusView);
-        Typeface typeFace = Typeface.createFromAsset(getAssets(),"fonts/spongefont.ttf");
-        statusView.setTypeface(typeFace);
+//        Typeface typeFace = Typeface.createFromAsset(getAssets(),"fonts/spongefont.ttf");
+//        statusView.setTypeface(typeFace);
         cheatButton = (Button) findViewById(R.id.cheatCheckButton);
+        loadingScreen = (LinearLayout) findViewById(R.id.loadingScreen);
+        uiContainer = (LinearLayout) findViewById(R.id.uiContainer);
 
         canvasWidth = layout.getWidth();
         canvasHeight = layout.getHeight();
@@ -87,7 +95,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
             public boolean onTouch(View v, MotionEvent event) {
                 if (event.getAction() == event.ACTION_DOWN) {
                     int height = v.getHeight();
-                    Point point = new Point((int) event.getX(), (int) (height - event.getY()));
+                    Point point = new Point((int) event.getX() - gamePainter.getXOffset(), (int) (height - event.getY() + gamePainter.getYOffset()));
                     gameManager.notify(point);
                 }
 
@@ -95,7 +103,29 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
             }
         });
 
-        lastBackPress = System.currentTimeMillis();
+        // touch listener for uiContainer dragging
+        uiContainer.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) uiContainer.getLayoutParams();
+                    if (uiContainer.getHeight() < uiContainer.getWidth()) { // portrait mode
+                        if (!uiAlignedToBottom) params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                        else params.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                    } else { // landscape mode
+                        if (!uiAlignedToBottom) params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                        else params.removeRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                    }
+                    uiContainer.setLayoutParams(params);
+                    uiAlignedToBottom = !uiAlignedToBottom;
+                }
+
+                return false;
+            }
+
+        });
+
+        gamePrepared = true;
     }
 
     @Override
@@ -118,7 +148,6 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         gamePainter = new GamePainter(canvasWidth, canvasHeight);
 
         // set graphics
-        gamePainter.setBackgroundImg(BitmapFactory.decodeResource(getResources(), R.drawable.bg_tile));
         gamePainter.setFieldImg(BitmapFactory.decodeResource(getResources(), R.drawable.field),
                 BitmapFactory.decodeResource(getResources(), R.drawable.field_high));
         gamePainter.setLadderFieldImg(BitmapFactory.decodeResource(getResources(), R.drawable.field_up),
@@ -161,6 +190,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
 
+        if (!gameInitialized) initGame();
+
         init();
 
         gamePainter.buildBoard(gameManager.getGameBoard()); // generate game board
@@ -188,6 +219,11 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
             lastBackPress = System.currentTimeMillis();
         } else { // kill game session and go back to lobby
             gameInitialized = false;
+            gamePrepared = false;
+            if (loadingScreen!=null) loadingScreen.setVisibility(View.VISIBLE);
+            gameManager = null;
+            gamePainter = null;
+            soundManager = null;
             super.onBackPressed();
         }
     }
@@ -205,7 +241,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            drawGame();
+                            if (gameInitialized && gamePrepared) drawGame();
                         }
                     });
                 }
@@ -263,6 +299,11 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
             cheatButton.setEnabled(gameManager.areCheatsEnabled());
             cheatButton.setVisibility(gameManager.areCheatsEnabled()? View.VISIBLE : View.INVISIBLE);
 
+            if (gameInitialized && gamePrepared && loadingScreen!=null) loadingScreen.setVisibility(View.INVISIBLE);
+            else if(loadingScreen!=null) {
+                loadingScreen.setVisibility(View.VISIBLE);
+            }
+
             uiChanged = false;
         }
     }
@@ -283,6 +324,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
 
         gameManager.highlightField(result);
         gameManager.setPlayerRolled(true);
+        disableUI(); // make sure the player can't roll more than once
 
         return result;
     }
