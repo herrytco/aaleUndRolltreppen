@@ -34,7 +34,7 @@ public class BotPlayer extends Player {
                 move(diceResult);
             }
         };
-        timer.schedule(waitTask, 1500);
+        timer.schedule(waitTask, 750);
     }
 
     private void move(int diceResult) {

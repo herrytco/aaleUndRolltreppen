@@ -15,12 +15,12 @@ public class GameManager implements IPlayerObserver, ITouchObserver {
     private GameBoard gameBoard;
     private ArrayList<Player> players;
     private int activePlayer;
-    private int minPlayerID;
     private boolean playerRolled = false;
     private int latestDiceResult = 0;
     private boolean cheatsEnabled = false;
     private CheatAction cheat;
     private int cheaterID = -1;
+    private boolean isMoving = false;
 
     private IGameUI ui;
 
@@ -38,11 +38,16 @@ public class GameManager implements IPlayerObserver, ITouchObserver {
         init();
     }
 
+    public void setFps(int fps) {
+        gameBoard.setFps(fps);
+    }
+
     /**
      * Initializes stuff
      */
     private void init() {
         activePlayer = 0;
+        isMoving = false;
     }
 
     public void setCheatsEnabled(boolean b) { cheatsEnabled = b; }
@@ -129,13 +134,20 @@ public class GameManager implements IPlayerObserver, ITouchObserver {
             if (executeMove(playerID, steps)) { // if game has ended
                 ui.endGame();
                 this.active = false;
-            } else {
-                switchToNextPlayer();
             }
+            isMoving = true;
         } else Log.d("Tag", "GameManager: playerID and activePlayer don't match("+playerID+"!="+activePlayer+").");
     }
 
+    public void checkProgress() {
+        if (isMoving && !gameBoard.isMoving()) {
+            isMoving = false;
+            switchToNextPlayer();
+        }
+    }
+
     private void switchToNextPlayer() {
+        if (!active) return;
         // switching to the next player
         if (++activePlayer >= players.size()) activePlayer = 0;
         if (activePlayer == cheaterID) { // make cheater skip one turn
@@ -194,6 +206,7 @@ public class GameManager implements IPlayerObserver, ITouchObserver {
         if(piece != null) {
             field += piece.getField();
             if (field < gameBoard.getNumberOfFields()) getGameBoard().getFields()[field].setHighlighted(true);
+            else ui.skipTurn();
         }
     }
 
@@ -205,6 +218,12 @@ public class GameManager implements IPlayerObserver, ITouchObserver {
     @Override
     public void notify(Point point) {
         if (players.get(activePlayer).expectsTouchInput()) {
+            // check if the turn should be skipped
+            if(gameBoard.checkOvershootingMove(players.get(activePlayer).getPlayerID(), latestDiceResult)) {
+                switchToNextPlayer();
+                return;
+            }
+
             int field = gameBoard.getFieldAtPosition(point);
             move(players.get(activePlayer).getPlayerID(),
                     field - gameBoard.getPieces().get(activePlayer).getField());

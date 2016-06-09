@@ -14,5 +14,6 @@ public interface IGameUI {
 
     public void showStatus(String status);
     public void endGame();
+    public void skipTurn();
 
 }

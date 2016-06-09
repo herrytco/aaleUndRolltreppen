@@ -46,6 +46,9 @@ public class LobbyActivity extends AppCompatActivity {
 
     private boolean cheatsEnabled = false;
 
+    //Fullscreen
+    private Fullscreen fs = new Fullscreen();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,6 +73,9 @@ public class LobbyActivity extends AppCompatActivity {
         playerName4 = (EditText) findViewById(R.id.playerName4);
         playerName5 = (EditText) findViewById(R.id.playerName5);
         cheatToggleButton = (Button) findViewById(R.id.cheatToggleButton);
+
+        fs.setDecorView(getWindow().getDecorView());
+        fs.hideSystemUI();
 
         init();
     }

@@ -13,6 +13,8 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -62,16 +64,25 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+    //Fullscreen
+    private Fullscreen fs = new Fullscreen();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        //make Fullscreen
+
+        fs.setDecorView(getWindow().getDecorView());
+        fs.hideSystemUI();
+
+
         // Set up the login form.
         init();
        }
     public void init()
     {
+
         mUserView = (AutoCompleteTextView) findViewById(R.id.user);
         populateAutoComplete();
 
@@ -391,11 +402,39 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         }
 
+
+
+
         @Override
         protected void onCancelled() {
             mAuthTask = null;
             showProgress(false);
         }
+    }
+
+    //stay in fullscreen while keyboard
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        // When the window loses focus (e.g. the action overflow is shown),
+        // cancel any pending hide action. When the window gains focus,
+        // hide the system UI.
+        if (hasFocus) {
+            delayedHide(300);
+        } else {
+            mHideHandler.removeMessages(0);
+        }
+    }
+
+    private final Handler mHideHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            fs.hideSystemUI();
+        }
+    };
+    private void delayedHide(int delayMillis) {
+        mHideHandler.removeMessages(0);
+        mHideHandler.sendEmptyMessageDelayed(0, delayMillis);
     }
 }
 

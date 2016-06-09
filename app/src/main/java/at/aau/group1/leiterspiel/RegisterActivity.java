@@ -10,6 +10,8 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -42,10 +44,17 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
 
     private static final int REQUEST_READ_CONTACTS = 0;
 
+    //Fullscreen
+    private Fullscreen fs = new Fullscreen();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
+
+        fs.setDecorView(getWindow().getDecorView());
+        fs.hideSystemUI();
+
         init();
     }
 
@@ -270,4 +279,31 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
         //TODO: Replace this with your own logic
         return password.length() > 4;
     }
+
+
+    //stay in fullscreen while keyboard
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        // When the window loses focus (e.g. the action overflow is shown),
+        // cancel any pending hide action. When the window gains focus,
+        // hide the system UI.
+        if (hasFocus) {
+            //delayedHide(300);
+        } else {
+            mHideHandler.removeMessages(0);
+        }
+    }
+
+    private final Handler mHideHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            fs.hideSystemUI();
+        }
+    };
+    private void delayedHide(int delayMillis) {
+        mHideHandler.removeMessages(0);
+        mHideHandler.sendEmptyMessageDelayed(0, delayMillis);
+    }
+
 }

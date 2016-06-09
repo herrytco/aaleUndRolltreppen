@@ -3,12 +3,10 @@ package at.aau.group1.leiterspiel;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
-import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.DragEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
@@ -32,12 +30,12 @@ import at.aau.group1.leiterspiel.Game.Player;
 public class GameActivity extends AppCompatActivity implements IGameUI {
 
     // controlling the framerate
-    private final int FPS = 30;
+    private final int FPS = 50; // generally 30-50fps is probably the best range for fluid animations
     private Timer graphicsTimer;
     private TimerTask drawTask;
     private boolean graphicsActive = false;
     // framerate measurement
-    private final boolean LOG_FPS = true;
+    private final boolean LOG_FPS = false;
     private long frametime = 0; // time needed to draw a frame and update the UI in ms
     private int measuredFPS = 0;
     private int frameCount = 0;
@@ -46,7 +44,6 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     // drawing the graphics
     private int canvasWidth = 512;
     private int canvasHeight = 512;
-    private Bitmap bmp;
     private int diceResult = 0;
     private String status;
     private static boolean uiChanged = true;
@@ -61,31 +58,27 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     private LinearLayout uiContainer;
     private boolean uiAlignedToBottom = false;
 
+    //Fullscreen
+    private Fullscreen fs = new Fullscreen();
+
     // static values to make them persistent over GameActivity lifecycles
     private static GameManager gameManager;
     private static SoundManager soundManager;
     private static GamePainter gamePainter;
     private static boolean gameInitialized = false;
-    private static boolean gamePrepared = false;
+    private static boolean uiInitialized = false;
 
     private long lastBackPress = 0;
 
     private Random random = new Random();
 
-    private void init() {
+    private void initUI() {
         layout = (LinearLayout) findViewById(R.id.gameCanvas);
         diceButton = (ImageButton) findViewById(R.id.diceButton);
         statusView = (TextView) findViewById(R.id.statusView);
-//        Typeface typeFace = Typeface.createFromAsset(getAssets(),"fonts/spongefont.ttf");
-//        statusView.setTypeface(typeFace);
         cheatButton = (Button) findViewById(R.id.cheatCheckButton);
         loadingScreen = (LinearLayout) findViewById(R.id.loadingScreen);
         uiContainer = (LinearLayout) findViewById(R.id.uiContainer);
-
-        canvasWidth = layout.getWidth();
-        canvasHeight = layout.getHeight();
-        Log.d("Init", "canvas size set to " + canvasWidth + "x" + canvasHeight);
-        gamePainter.setDimensions(canvasWidth, canvasHeight);
 
         random.setSeed(System.currentTimeMillis());
 
@@ -125,7 +118,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
 
         });
 
-        gamePrepared = true;
+        uiInitialized = true;
     }
 
     @Override
@@ -133,7 +126,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game);
 
-        if (!gameInitialized) initGame();
+        fs.setDecorView(getWindow().getDecorView());
+        fs.hideSystemUI();
     }
 
     private void initGame() {
@@ -144,10 +138,12 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         boolean cheatsEnabled = getIntent().getBooleanExtra("CheatPermission", false);
 
         gameManager = new GameManager(this);
+        gameManager.setFps(FPS);
         soundManager = new SoundManager(getApplicationContext());
         gamePainter = new GamePainter(canvasWidth, canvasHeight);
 
         // set graphics
+        gamePainter.setEscalatorImg(BitmapFactory.decodeResource(getResources(), R.drawable.esc_step));
         gamePainter.setFieldImg(BitmapFactory.decodeResource(getResources(), R.drawable.field),
                 BitmapFactory.decodeResource(getResources(), R.drawable.field_high));
         gamePainter.setLadderFieldImg(BitmapFactory.decodeResource(getResources(), R.drawable.field_up),
@@ -166,6 +162,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         gameManager.addLadder(new Ladder(Ladder.LadderType.DOWN, 23, 37));
         gameManager.addLadder(new Ladder(Ladder.LadderType.UP, 39, 46));
         gameManager.addLadder(new Ladder(Ladder.LadderType.DOWN, 34, 57));
+        // for a lesson of how not to do random-generated content, use this:
+//        gameManager.setGameBoard(new BoardGenerator(60, 8).generateBoard());
 
         gameManager.setCheatsEnabled(cheatsEnabled);
 
@@ -190,41 +188,50 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
 
-        if (!gameInitialized) initGame();
+        if (hasFocus) {
+            if (!gameInitialized) initGame();
+            initUI();
+        }
 
-        init();
+        if (gameInitialized && uiInitialized) {
+            canvasWidth = layout.getWidth();
+            canvasHeight = layout.getHeight();
+            Log.d("Init", "canvas size set to " + canvasWidth + "x" + canvasHeight);
+            gamePainter.setDimensions(canvasWidth, canvasHeight);
 
-        gamePainter.buildBoard(gameManager.getGameBoard()); // generate game board
-
-        runGraphics();
-
-        gameManager.startGame();
+            gamePainter.buildBoard(gameManager.getGameBoard()); // generate game board
+            runGraphics();
+            gameManager.startGame();
+        }
     }
 
     @Override
     protected void onStop() {
         super.onStop();
 
-        gameManager.pauseGame();
+        if (gameManager!=null) gameManager.pauseGame();
 
-        drawTask.cancel(); // stop graphics output
-        graphicsTimer.cancel();
+        if (drawTask!=null) drawTask.cancel(); // stop graphics output
+        if (graphicsTimer!=null) graphicsTimer.cancel();
         graphicsActive = false;
     }
 
     @Override
     public void onBackPressed() {
         if (System.currentTimeMillis() - lastBackPress > 3000) { // create warning
-            Toast.makeText(getApplicationContext(), getResources().getString(R.string.press_back_again), Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), getResources().getString(R.string.press_back_again), Toast.LENGTH_LONG).show();
             lastBackPress = System.currentTimeMillis();
         } else { // kill game session and go back to lobby
             gameInitialized = false;
-            gamePrepared = false;
+            uiInitialized = false;
+            uiChanged = true;
+            uiEnabled = false;
+            status = null;
             if (loadingScreen!=null) loadingScreen.setVisibility(View.VISIBLE);
             gameManager = null;
             gamePainter = null;
             soundManager = null;
-            super.onBackPressed();
+            super.onBackPressed(); // exit activity
         }
     }
 
@@ -241,7 +248,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            if (gameInitialized && gamePrepared) drawGame();
+                            if (gameInitialized && uiInitialized) drawGame();
                         }
                     });
                 }
@@ -263,7 +270,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         gamePainter.drawBoard(gameManager.getGameBoard()); // draw the board on the canvas
         gamePainter.drawPieces(gameManager.getGameBoard()); // draw the players on the canvas
         layout.setBackground(new BitmapDrawable(gamePainter.getFrame())); // display updated canvas
-        updateUI();
+        updateUI(); // update parts of the user interface based on the game's state
+        gameManager.checkProgress(); // make the GameManager check if a player's turn was finished
 
         long end = System.currentTimeMillis();
         frametime = end - start;
@@ -299,7 +307,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
             cheatButton.setEnabled(gameManager.areCheatsEnabled());
             cheatButton.setVisibility(gameManager.areCheatsEnabled()? View.VISIBLE : View.INVISIBLE);
 
-            if (gameInitialized && gamePrepared && loadingScreen!=null) loadingScreen.setVisibility(View.INVISIBLE);
+            if (gameInitialized && uiInitialized && loadingScreen!=null) loadingScreen.setVisibility(View.INVISIBLE);
             else if(loadingScreen!=null) {
                 loadingScreen.setVisibility(View.VISIBLE);
             }
@@ -374,5 +382,10 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     public void endGame() {
         this.disableUI();
         this.showStatus(getResources().getString(R.string.game_finished));
+    }
+
+    @Override
+    public void skipTurn() {
+        showStatus(getString(R.string.skip_turn));
     }
 }

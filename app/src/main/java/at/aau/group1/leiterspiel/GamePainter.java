@@ -3,9 +3,11 @@ package at.aau.group1.leiterspiel;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
+import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -20,12 +22,14 @@ import at.aau.group1.leiterspiel.Game.Snake;
  */
 public class GamePainter {
 
+    private boolean boardBuilt = false;
     private int canvasWidth, canvasHeight;
     private Bitmap bmp;
     private Canvas canvas;
 
     // images to be drawn on the canvas
-//    private Bitmap bgTile;
+    private Bitmap escImg;
+    private Bitmap scaledEscImg;
     private Bitmap fieldImg;
     private Bitmap scaledFieldImg;
     private Bitmap fieldHighlightImg;
@@ -36,7 +40,6 @@ public class GamePainter {
     private Bitmap scaledFieldDownImg;
     private ArrayList<Bitmap> pieceImgs = new ArrayList<Bitmap>();
     private ArrayList<Bitmap> scaledPieceImgs = new ArrayList<Bitmap>();
-    private Bitmap[] ladderImgs;
     private Bitmap boardImg;
 
     // style of the GameBoard
@@ -44,7 +47,6 @@ public class GamePainter {
     private final int MIN_VERTICAL_FIELDS = 3;
     private int minHorizontalFields = 8; // sets how many fields should be aligned horizontally, in portrait mode
     private int fieldRadius = 0;
-    private int oldFieldRadius = 0;
     private boolean sizeInitialized = false;
     private int horizontalFields; // number of fields in the horizontal lines
     private int verticalFields; // number of fields aligned vertically, connecting the horizontal lines
@@ -75,6 +77,11 @@ public class GamePainter {
         init();
     }
 
+    public void setEscalatorImg(Bitmap img) {
+        escImg = img;
+        sizeInitialized = false;
+    }
+
     public void setFieldImg(Bitmap field, Bitmap highlight) {
         fieldImg = field;
         fieldHighlightImg = highlight;
@@ -97,8 +104,12 @@ public class GamePainter {
         return bmp;
     }
 
-    private void resizeResources(GameBoard gameBoard) {
-        if (fieldImg!=null )
+    private void resizeResources() {
+        if (!boardBuilt) return;
+
+        if (escImg!=null)
+            scaledEscImg = Bitmap.createScaledBitmap(escImg, fieldRadius*2, fieldRadius*2/3, false);
+        if (fieldImg!=null)
             scaledFieldImg = Bitmap.createScaledBitmap(fieldImg, fieldRadius*2, fieldRadius*2, false);
         if (fieldHighlightImg!=null)
             scaledFieldHighlightImg = Bitmap.createScaledBitmap(fieldHighlightImg, fieldRadius*2, fieldRadius*2, false);
@@ -110,7 +121,6 @@ public class GamePainter {
         for (int n=0; n<pieceImgs.size(); n++) {
             scaledPieceImgs.set(n, Bitmap.createScaledBitmap(pieceImgs.get(n), pieceSize, pieceSize, false));
         }
-        ladderImgs = new Bitmap[gameBoard.getLadders().size()];
         boardImg = null;
         sizeInitialized = true;
     }
@@ -134,7 +144,6 @@ public class GamePainter {
 //        }
 //        horizontalFields = minHorizontalFields;
 
-        oldFieldRadius = fieldRadius;
         fieldRadius = (int) (canvasWidth*0.9 / horizontalFields / 3);
         int maxVerticalFields = (int) (canvasHeight*0.9 / (fieldRadius*3));
         int remainingFields = gameBoard.getNumberOfFields() - maxVerticalFields;
@@ -190,7 +199,8 @@ public class GamePainter {
             direction = !direction;
         }
 
-        resizeResources(gameBoard);
+        boardBuilt = true;
+        resizeResources();
 
     }
 
@@ -249,30 +259,21 @@ public class GamePainter {
      * gameBoard.
      */
     public void drawBoard(GameBoard gameBoard) {
-        if (!sizeInitialized) resizeResources(gameBoard);
+        if (!boardBuilt) return;
+        if (!sizeInitialized) resizeResources();
 
         Paint paint = new Paint();
-        paint.setTextAlign(Paint.Align.CENTER);
-        paint.setTextSize(fieldRadius);
 
         if (boardImg!=null) {
             canvas.drawBitmap(boardImg, xOffset, yOffset, paint);
 
             GameField[] fields = gameBoard.getFields();
-                if (fieldImg != null) { // if a field image exists then use it, or fall back to ugly graphics
-                    for (GameField field: fields) {
-                        if (field.isHighlighted())
-                            canvas.drawBitmap(scaledFieldHighlightImg, field.getPos().x - fieldRadius + xOffset, canvasHeight - field.getPos().y - fieldRadius - yOffset, paint);
-                    }
-                } else {
-                    for (GameField field: fields) {
-                        if (field.isHighlighted()) {
-                            paint.setColor(Color.GREEN);
-                            paint.setStyle(Paint.Style.FILL);
-                            canvas.drawCircle(field.getPos().x + xOffset, canvasHeight - field.getPos().y - yOffset, (int) (fieldRadius * 1.2), paint);
-                        }
-                    }
+            if (fieldImg != null) { // if a field image exists then use it, or fall back to ugly graphics
+                for (GameField field: fields) {
+                    if (field.isHighlighted())
+                        canvas.drawBitmap(scaledFieldHighlightImg, field.getPos().x - fieldRadius + xOffset, canvasHeight - field.getPos().y - fieldRadius - yOffset, paint);
                 }
+            }
         } else {
             initDrawBoard(gameBoard);
         }
@@ -285,46 +286,24 @@ public class GamePainter {
         boardImg = Bitmap.createBitmap(canvasWidth, canvasHeight, Bitmap.Config.ARGB_8888);
         Canvas boardCanvas = new Canvas(boardImg);
 
+        // draw the ladders
+        initDrawLadders(gameBoard);
+
         // draw the fields
         if (fieldImg != null) { // if a field image exists then use it, or fall back to ugly graphics
             for (GameField field: fields) {
                 if (!field.isHighlighted()) boardCanvas.drawBitmap(scaledFieldImg, field.getPos().x - fieldRadius, canvasHeight - field.getPos().y - fieldRadius, paint);
                 else boardCanvas.drawBitmap(scaledFieldHighlightImg, field.getPos().x - fieldRadius, canvasHeight - field.getPos().y - fieldRadius, paint);
             }
-        } else {
-            for (GameField field : fields) {
-                // color and style
-                if (field.getType() == GameField.FieldType.DEFAULT) {
-                    paint.setColor(Color.BLACK);
-                    paint.setStyle(Paint.Style.STROKE);
-                } else if (field.getType() == GameField.FieldType.START) {
-                    paint.setColor(Color.GRAY);
-                    paint.setStyle(Paint.Style.FILL);
-                } else if (field.getType() == GameField.FieldType.FINISH) {
-                    paint.setColor(Color.CYAN);
-                    paint.setStyle(Paint.Style.FILL);
-                }
-
-                if (field.isHighlighted()) {
-                    paint.setColor(Color.GREEN);
-                    paint.setStyle(Paint.Style.FILL);
-                    boardCanvas.drawCircle(field.getPos().x, canvasHeight - field.getPos().y, (int) (fieldRadius * 1.2), paint);
-                }
-
-                // invert Y coordinate because 2D Y axis is inverted
-                boardCanvas.drawCircle(field.getPos().x, canvasHeight - field.getPos().y, fieldRadius, paint);
-            }
         }
 
-        // draw the ladders
-        if (ladderImgs.length>0 && ladderImgs[0]==null) initDrawLadders(gameBoard);
+        // draw the highlighted ladder fields
         int index = 0;
         for (Ladder ladder : gameBoard.getLadders()) {
             GameField start = gameBoard.getFields()[ladder.getStartField()];
             GameField end = gameBoard.getFields()[ladder.getEndField()];
 
             if (fieldUpImg != null) {
-                boardCanvas.drawBitmap(ladderImgs[index], 0, 0, paint);
 
                 if (ladder.getType() == Ladder.LadderType.UP) {
                     if (!start.isHighlighted())
@@ -337,22 +316,6 @@ public class GamePainter {
                     if (!end.isHighlighted())
                         boardCanvas.drawBitmap(scaledFieldDownImg, end.getPos().x - fieldRadius, canvasHeight - end.getPos().y - fieldRadius, paint);
                 }
-            } else { // fallback
-                paint.setColor(Color.YELLOW);
-                paint.setStyle(Paint.Style.FILL);
-                boardCanvas.drawCircle(start.getPos().x, canvasHeight - start.getPos().y, fieldRadius - 1, paint);
-                boardCanvas.drawCircle(end.getPos().x, canvasHeight - end.getPos().y, fieldRadius - 1, paint);
-                paint.setColor(Color.BLACK);
-                paint.setStyle(Paint.Style.STROKE);
-                boardCanvas.drawLine(start.getPos().x, canvasHeight - start.getPos().y,
-                        end.getPos().x, canvasHeight - end.getPos().y,
-                        paint);
-
-                paint.setStyle(Paint.Style.FILL_AND_STROKE);
-                if (ladder.getType() == Ladder.LadderType.UP) // Rolltreppe
-                    boardCanvas.drawText("R", start.getPos().x, canvasHeight - start.getPos().y, paint);
-                if (ladder.getType() == Ladder.LadderType.DOWN) // Aal
-                    boardCanvas.drawText("A", start.getPos().x, canvasHeight - start.getPos().y, paint);
             }
             index++;
         }
@@ -362,23 +325,41 @@ public class GamePainter {
     private void initDrawLadders(GameBoard gameBoard) {
         Paint ladderPaint = new Paint();
 
+        Canvas ladderCanvas = new Canvas(boardImg);
+
         int index = 0;
         for (Ladder ladder: gameBoard.getLadders()) {
-            ladderImgs[index] = Bitmap.createBitmap(canvasWidth, canvasHeight, Bitmap.Config.ARGB_8888);
-            Canvas ladderCanvas = new Canvas(ladderImgs[index]);
+
             GameField start = gameBoard.getFields()[ladder.getStartField()];
             GameField end = gameBoard.getFields()[ladder.getEndField()];
             // calculate length of the ladder in pixels
             int length = (int) Math.hypot(Math.abs(start.getPos().x - end.getPos().x),
                     Math.abs(start.getPos().y - end.getPos().y));
 
-            // TODO create + draw eels & escalators
-            if (ladder.getType() == Ladder.LadderType.UP) { // Rolltreppen
-                ladderPaint.setColor(Color.BLACK);
-                ladderPaint.setStyle(Paint.Style.STROKE);
-                ladderCanvas.drawLine(start.getPos().x, canvasHeight - start.getPos().y,
-                        end.getPos().x, canvasHeight - end.getPos().y,
-                        ladderPaint);
+            if (ladder.getType() == Ladder.LadderType.UP && scaledEscImg != null) { // Rolltreppen
+                // calculate the angle of the escalator
+                int dx = end.getPos().x - start.getPos().x;
+                int dy = end.getPos().y - start.getPos().y;
+                double escAngle = Math.atan2(dy, dx);
+                // get the length of the escalator using Pythagoras
+                int escLength = (int) Math.hypot(Math.abs(dx), Math.abs(dy));
+                int stepSize = scaledEscImg.getHeight();
+                int escSteps = escLength/stepSize;
+                // create the escalator
+                Bitmap escalator = Bitmap.createBitmap(scaledEscImg.getWidth(), escLength, Bitmap.Config.ARGB_8888);
+                Canvas escCanvas = new Canvas(escalator);
+                for (int step = 0; step < escSteps; step++) {
+                    escCanvas.drawBitmap(scaledEscImg, 0, step*stepSize, ladderPaint);
+                }
+                // set rotation/translation matrix
+                Matrix matrix = new Matrix();
+                matrix.postRotate((float) Math.toDegrees(-escAngle)+90);
+                // draw the escalator onto the gameboard
+                escalator = Bitmap.createBitmap(escalator, 0, 0, escalator.getWidth(), escalator.getHeight(), matrix, false);
+                // if-else is experimental, hopefully it (more or less) corrects the x coordinate for all cases
+                if (Math.toDegrees(-escAngle)+90 < 0) ladderCanvas.drawBitmap(escalator, start.getPos().x - escalator.getWidth(), canvasHeight - (start.getPos().y + escalator.getHeight() - stepSize), ladderPaint);
+                else ladderCanvas.drawBitmap(escalator, start.getPos().x - escalator.getWidth()/2, canvasHeight - (start.getPos().y + escalator.getHeight() - stepSize), ladderPaint);
+
             } else if (ladder.getType() == Ladder.LadderType.DOWN) { // Aaaaaaale
                 ladderPaint.setColor(Color.argb(255, 50, 128, 75));
                 ladderPaint.setStyle(Paint.Style.FILL_AND_STROKE);
@@ -404,24 +385,42 @@ public class GamePainter {
      * Draws the player's pieces on the canvas.
      */
     public void drawPieces(GameBoard gameBoard) {
-        if(!sizeInitialized) resizeResources(gameBoard);
+        if (!boardBuilt) return;
+        if(!sizeInitialized) resizeResources();
 
         int pieceSize = (int) (fieldRadius * PIECE_SIZE_FACTOR);
         Paint paint = new Paint();
-        paint.setTextSize(pieceSize);
-        paint.setTextAlign(Paint.Align.CENTER);
-        paint.setColor(Color.BLACK);
-        paint.setStyle(Paint.Style.FILL_AND_STROKE);
 
         // draw the stuff
         for (Piece piece:gameBoard.getPieces()) {
+            // position of the piece being drawn
             Point imgPos = gameBoard.getFields()[piece.getField()].getPos();
-            imgPos = shufflePiecePosition(imgPos, piece, pieceSize); // in case multiple pieces are on a single field, change their position a bit to keep them all visible
+            imgPos = shufflePiecePosition(imgPos, piece, piece.getField(), pieceSize); // in case multiple pieces are on a single field, change their position a bit to keep them all visible
+
+            if (gameBoard.isMoving() && piece.getPlayerID() == gameBoard.getMovingPiece().getPlayerID()) { // if this piece is currently moving, calculate the movement
+                gameBoard.updateProgress();
+                double progress = gameBoard.getProgress();
+                Point oldPos = gameBoard.getFields()[gameBoard.getPreviousField()].getPos(); // position of the field the piece moves from
+                oldPos = shufflePiecePosition(oldPos, piece, gameBoard.getPreviousField(), pieceSize);
+                int midField = (gameBoard.getPreviousField()+piece.getField())/2; // selecting the field in the middle of the route as third point for the bezier curve
+                Point midPos = gameBoard.getFields()[midField].getPos();
+
+                imgPos = quadraticBezier( oldPos, midPos, imgPos, (int)(1.0/gameBoard.getTurnProgressIncrease()), (int)(gameBoard.getProgress()/gameBoard.getTurnProgressIncrease()) );
+            }
+
             if (scaledPieceImgs.size() > 0 && piece.getPlayerID() < scaledPieceImgs.size())
                 canvas.drawBitmap(scaledPieceImgs.get(piece.getPlayerID()), imgPos.x - fieldRadius + xOffset, canvasHeight - imgPos.y - fieldRadius - yOffset, paint);
-            else // fallback to ugly graphics
-                canvas.drawText(piece.getPlayerID()+"", imgPos.x + xOffset, canvasHeight - imgPos.y + paint.getTextSize()/2.5f - yOffset, paint);
         }
+    }
+
+    public Point quadraticBezier(Point start, Point mid, Point end, int steps, int currentStep) {
+        double stepSize = 1.0/steps;
+        double t = currentStep * stepSize;
+
+        return new Point(
+                (int) ( (start.x - 2*mid.x + end.x)*t*t + (-2*start.x + 2*mid.x)*t + start.x ),
+                (int) ( (start.y - 2*mid.y + end.y)*t*t + (-2*start.y + 2*mid.y)*t + start.y )
+        );
     }
 
     /**
@@ -433,9 +432,9 @@ public class GamePainter {
      * @param size Size/Diameter of the piece bitmap in pixels
      * @return New position
      */
-    private Point shufflePiecePosition(Point pos, Piece piece, int size) {
+    private Point shufflePiecePosition(Point pos, Piece piece, int field, int size) {
         Point p = new Point(pos.x, pos.y);
-        int v = (piece.getField() + piece.getPlayerID()) % 4;
+        int v = (field + piece.getPlayerID()) % 4;
         int offset = size/6;
         if (v==0) {
             p.x = p.x - offset;

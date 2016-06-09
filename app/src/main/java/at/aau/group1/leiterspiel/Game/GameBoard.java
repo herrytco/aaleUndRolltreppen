@@ -17,6 +17,13 @@ public class GameBoard {
 
     // for graphics later on
     private GameField[] fields;
+    // speed of the movement animation, >=1.0 means instant movement
+    private double turnProgressIncrease = 1.0;
+    private final int TURN_DURATION_MS = 100; // time needed per field to complete the move
+    private int fps = 30;
+    private Piece movingPiece;
+    private boolean isMoving = false;
+    private int previousField = 0;
 
     public GameBoard() {
 
@@ -28,6 +35,12 @@ public class GameBoard {
         this.pieces = pieces;
         this.fields = new GameField[numberOfFields];
         Arrays.fill(fields, new GameField());
+    }
+
+    public void setFps(int fps) { this.fps = fps; }
+
+    public double getTurnProgressIncrease() {
+        return turnProgressIncrease;
     }
 
     /**
@@ -74,8 +87,8 @@ public class GameBoard {
      * @return true if this move ends the game, otherwise false
      */
     public boolean movePiece(int playerID, int fields) {
-        int previousField = 0; // for debug messages only
         boolean gameEnded = false;
+        boolean ladderUsed = false;
 
         Piece currentPiece = null;
         for (Piece p: pieces) {
@@ -101,23 +114,64 @@ public class GameBoard {
             // check ladders
             for (Ladder ladder: ladders) {
                 if (ladder.checkFields(currentField)) {
+                    int temp = currentField;
                     currentField = ladder.checkActivation(currentField);
-
-                    if (currentField != previousField) Log.d("Tag", "Player "+playerID+" used a ladder");
+                    if (temp != currentField) ladderUsed = true;
                     break;
                 }
             }
         }
         // move piece to currentField
         currentPiece.setField(currentField);
-
-        // remove highlighting
-        for (int f=0; f<numberOfFields; f++) {
-            this.fields[f].setHighlighted(false);
-        }
+        movingPiece = currentPiece;
+        isMoving = true;
+        turnProgressIncrease = calculateProgressIncrease(previousField, currentField, ladderUsed);
 
         Log.d("Tag", "Player " + playerID + " moved from field " + previousField + " to " + currentField);
         return gameEnded;
+    }
+
+    private double calculateProgressIncrease(int start, int end, boolean ladder) {
+        // set the progress increase per frame based on the FPS and distance of the move
+        // distance of one field to another
+        int stepDistance = (int) Math.hypot(Math.abs(fields[0].getPos().x - fields[1].getPos().x),
+                Math.abs(fields[0].getPos().y - fields[1].getPos().y));
+        Point previous = fields[start].getPos();
+        Point current = fields[end].getPos();
+        // distance of the two given fields
+        int fieldDistance = (int) Math.hypot(Math.abs(previous.x - current.x),
+                Math.abs(previous.y - current.y));
+
+        int div = fieldDistance / stepDistance;
+        int duration = TURN_DURATION_MS * Math.max(div, 3); // 3 fields distance as minimum so the animation doesn't appear too fast over short distances
+        if (ladder) duration *= 1.5;
+        double ratio = 1000/duration;
+        return 1.0/(fps/ratio);
+    }
+
+    public boolean checkOvershootingMove(int playerID, int fields) {
+        for (Piece p: pieces) {
+            if (p.getPlayerID() == playerID) {
+                return p.getField() + fields >= getNumberOfFields();
+            }
+        }
+        return false;
+    }
+
+    public boolean checkLadderMove(int playerID, int fields) {
+        for (Piece p: pieces) {
+            if (p.getPlayerID() == playerID) {
+                for (Ladder ladder: ladders) {
+                    int nextField = p.getField() + fields;
+                    if (ladder.checkFields(nextField)) {
+                        int result = ladder.checkActivation(nextField);
+                        if (result != nextField) return true;
+                    }
+                }
+                return false;
+            }
+        }
+        return false;
     }
 
     /**
@@ -214,4 +268,30 @@ public class GameBoard {
         return nearestField;
     }
 
+    public boolean updateProgress() {
+        if ( isMoving && movingPiece.increaseProgress(turnProgressIncrease) ) {
+            movingPiece = null;
+            isMoving = false;
+            previousField = 0;
+            // remove highlighting
+            for (int f=0; f<numberOfFields; f++) {
+                this.fields[f].setHighlighted(false);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public double getProgress() {
+        if (movingPiece!=null) return movingPiece.getTurnProgress();
+        return 1.0;
+    }
+
+    public int getPreviousField() { return previousField; }
+
+    public Piece getMovingPiece() { return movingPiece; }
+
+    public boolean isMoving() {
+        return isMoving;
+    }
 }
