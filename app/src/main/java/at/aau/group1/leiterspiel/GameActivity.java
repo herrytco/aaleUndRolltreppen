@@ -1,9 +1,10 @@
 package at.aau.group1.leiterspiel;
 
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,6 +12,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -35,7 +37,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     private TimerTask drawTask;
     private boolean graphicsActive = false;
     // framerate measurement
-    private final boolean LOG_FPS = false;
+    private final boolean LOG_FPS = true;
     private long frametime = 0; // time needed to draw a frame and update the UI in ms
     private int measuredFPS = 0;
     private int frameCount = 0;
@@ -50,13 +52,29 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     private static boolean uiEnabled = false;
 
     // UI elements
-    private LinearLayout layout;
+    private LinearLayout gameCanvas;
     private TextView statusView;
     private ImageButton diceButton;
     private Button cheatButton;
     private LinearLayout loadingScreen;
     private LinearLayout uiContainer;
     private boolean uiAlignedToBottom = false;
+    private LinearLayout endScreen;
+    private ImageView winnerPictureView;
+    private TextView winnerNameView;
+    private int[] diceFaces = {
+            R.drawable.dice_1,
+            R.drawable.dice_2,
+            R.drawable.dice_3,
+            R.drawable.dice_4,
+            R.drawable.dice_5,
+            R.drawable.dice_6 };
+    private int[] playerIcons = {
+            R.drawable.patrick,
+            R.drawable.sponge,
+            R.drawable.squid,
+            R.drawable.plankton,
+            R.drawable.sandy };
 
     //Fullscreen
     private Fullscreen fs = new Fullscreen();
@@ -68,22 +86,26 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     private static boolean gameInitialized = false;
     private static boolean uiInitialized = false;
 
+    private Player winner;
     private long lastBackPress = 0;
 
     private Random random = new Random();
 
     private void initUI() {
-        layout = (LinearLayout) findViewById(R.id.gameCanvas);
+        gameCanvas = (LinearLayout) findViewById(R.id.gameCanvas);
         diceButton = (ImageButton) findViewById(R.id.diceButton);
         statusView = (TextView) findViewById(R.id.statusView);
         cheatButton = (Button) findViewById(R.id.cheatCheckButton);
         loadingScreen = (LinearLayout) findViewById(R.id.loadingScreen);
         uiContainer = (LinearLayout) findViewById(R.id.uiContainer);
+        endScreen = (LinearLayout) findViewById(R.id.endPopup);
+        winnerPictureView = (ImageView) findViewById(R.id.winnerView);
+        winnerNameView = (TextView) findViewById(R.id.winnerName);
 
         random.setSeed(System.currentTimeMillis());
 
         // touch listener for player input
-        layout.setOnTouchListener(new View.OnTouchListener() {
+        gameCanvas.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 if (event.getAction() == event.ACTION_DOWN) {
@@ -148,12 +170,9 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
                 BitmapFactory.decodeResource(getResources(), R.drawable.field_high));
         gamePainter.setLadderFieldImg(BitmapFactory.decodeResource(getResources(), R.drawable.field_up),
                 BitmapFactory.decodeResource(getResources(), R.drawable.field_down));
-        gamePainter.addPieceImg(BitmapFactory.decodeResource(getResources(), R.drawable.patrick));
-        gamePainter.addPieceImg(BitmapFactory.decodeResource(getResources(), R.drawable.sponge));
-        gamePainter.addPieceImg(BitmapFactory.decodeResource(getResources(), R.drawable.krabs));
-        gamePainter.addPieceImg(BitmapFactory.decodeResource(getResources(), R.drawable.squid));
-        gamePainter.addPieceImg(BitmapFactory.decodeResource(getResources(), R.drawable.plankton));
-        gamePainter.addPieceImg(BitmapFactory.decodeResource(getResources(), R.drawable.sandy));
+        for (int i=0; i<playerIcons.length; i++) {
+            gamePainter.addPieceImg(BitmapFactory.decodeResource(getResources(), playerIcons[i]));
+        }
 
         // create a game board
         gameManager.getGameBoard().setNumberOfFields(60);
@@ -184,6 +203,18 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         gameInitialized = true;
     }
 
+    private void resetGame() {
+        gameInitialized = false;
+        uiInitialized = false;
+        uiChanged = true;
+        uiEnabled = false;
+        status = null;
+        if (loadingScreen!=null) loadingScreen.setVisibility(View.VISIBLE);
+        gameManager = null;
+        gamePainter = null;
+        soundManager = null;
+    }
+
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
@@ -194,8 +225,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         }
 
         if (gameInitialized && uiInitialized) {
-            canvasWidth = layout.getWidth();
-            canvasHeight = layout.getHeight();
+            canvasWidth = gameCanvas.getWidth();
+            canvasHeight = gameCanvas.getHeight();
             Log.d("Init", "canvas size set to " + canvasWidth + "x" + canvasHeight);
             gamePainter.setDimensions(canvasWidth, canvasHeight);
 
@@ -222,15 +253,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
             Toast.makeText(getApplicationContext(), getResources().getString(R.string.press_back_again), Toast.LENGTH_LONG).show();
             lastBackPress = System.currentTimeMillis();
         } else { // kill game session and go back to lobby
-            gameInitialized = false;
-            uiInitialized = false;
-            uiChanged = true;
-            uiEnabled = false;
-            status = null;
-            if (loadingScreen!=null) loadingScreen.setVisibility(View.VISIBLE);
-            gameManager = null;
-            gamePainter = null;
-            soundManager = null;
+            resetGame();
             super.onBackPressed(); // exit activity
         }
     }
@@ -266,10 +289,10 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         long start = System.currentTimeMillis();
         if (startTime == 0) startTime = start;
 
-        gamePainter.clearCanvas(); // clear previous frame
-        gamePainter.drawBoard(gameManager.getGameBoard()); // draw the board on the canvas
-        gamePainter.drawPieces(gameManager.getGameBoard()); // draw the players on the canvas
-        layout.setBackground(new BitmapDrawable(gamePainter.getFrame())); // display updated canvas
+        if (gamePainter.getFinished()) { // as soon as the frame is drawn, slap it onto the gameCanvas, or wait a bit longer
+            gameCanvas.setBackground(new BitmapDrawable(gamePainter.getFrame()));
+            gamePainter.drawFrame(gameManager.getGameBoard()); // call drawing of the next frame
+        }
         updateUI(); // update parts of the user interface based on the game's state
         gameManager.checkProgress(); // make the GameManager check if a player's turn was finished
 
@@ -307,8 +330,17 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
             cheatButton.setEnabled(gameManager.areCheatsEnabled());
             cheatButton.setVisibility(gameManager.areCheatsEnabled()? View.VISIBLE : View.INVISIBLE);
 
-            if (gameInitialized && uiInitialized && loadingScreen!=null) loadingScreen.setVisibility(View.INVISIBLE);
-            else if(loadingScreen!=null) {
+            if (winner != null && endScreen != null) {
+                winnerNameView.setText(winner.getName());
+                if (winner.getPlayerID() < playerIcons.length)
+                    winnerPictureView.setBackground(getResources().getDrawable( playerIcons[winner.getPlayerID()] ));
+                endScreen.setVisibility(View.VISIBLE);
+            } else if (endScreen != null)
+                endScreen.setVisibility(View.INVISIBLE);
+
+            if (gameInitialized && uiInitialized && loadingScreen!=null) {
+                loadingScreen.setVisibility(View.INVISIBLE);
+            } else if(loadingScreen!=null) {
                 loadingScreen.setVisibility(View.VISIBLE);
             }
 
@@ -379,13 +411,19 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
      * Calls showStatus() with the game_finished string.
      */
     @Override
-    public void endGame() {
+    public void endGame(Player winner) {
         this.disableUI();
         this.showStatus(getResources().getString(R.string.game_finished));
+        this.winner = winner;
     }
 
     @Override
     public void skipTurn() {
         showStatus(getString(R.string.skip_turn));
+    }
+
+    public void backToStartScreen(View view) {
+        resetGame();
+        finish(); // end the activity
     }
 }

@@ -5,12 +5,6 @@
     android:layout_height="fill_parent"
     tools:context="at.aau.group1.leiterspiel.GameActivity" >
 
-    <!-- <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:src="@drawable/bg"
-        android:scaleType="centerCrop" /> -->
-
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
@@ -33,7 +27,8 @@
         android:layout_height="wrap_content"
         android:id="@+id/uiContainer"
         android:background="@drawable/ui_container"
-        android:layout_margin="20dp">
+        android:layout_margin="20dp"
+        android:baselineAligned="false">
 
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:tools="http://schemas.android.com/tools"
@@ -92,6 +87,46 @@
                 android:textStyle="bold"
                 android:text="!"/>
         </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/endPopup"
+        android:background="@drawable/ui_container"
+        android:layout_margin="50dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:baselineAligned="false" >
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="40dp"
+            android:text="@string/game_finished"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.AppCompat.Headline" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/winnerView" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/loading"
+            android:id="@+id/winnerName"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="40dp"
+            android:onClick="backToStartScreen"
+            android:text="@string/back_to_menu" />
 
     </LinearLayout>
 

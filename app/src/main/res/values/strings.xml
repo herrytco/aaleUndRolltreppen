@@ -16,6 +16,7 @@
     <string name="nobody">Niemand</string>
     <string name="loading">Lädt...</string>
     <string name="skip_turn">Zug nicht möglich</string>
+    <string name="back_to_menu">Zurück zum Startbildschirm</string>
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>

@@ -132,7 +132,7 @@ public class GameManager implements IPlayerObserver, ITouchObserver {
             }
 
             if (executeMove(playerID, steps)) { // if game has ended
-                ui.endGame();
+                ui.endGame(players.get(activePlayer));
                 this.active = false;
             }
             isMoving = true;

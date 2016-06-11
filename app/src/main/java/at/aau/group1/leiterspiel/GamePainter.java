@@ -7,6 +7,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
+import android.os.AsyncTask;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -26,6 +27,8 @@ public class GamePainter {
     private int canvasWidth, canvasHeight;
     private Bitmap bmp;
     private Canvas canvas;
+    private PaintTask paintTask;
+    private boolean frameFinished;
 
     // images to be drawn on the canvas
     private Bitmap escImg;
@@ -67,6 +70,8 @@ public class GamePainter {
         bmp = null;
         bmp = Bitmap.createBitmap(canvasWidth, canvasHeight, Bitmap.Config.ARGB_8888);
         canvas = new Canvas(bmp);
+        paintTask = new PaintTask();
+        frameFinished = true;
         xOffset = 0;
         yOffset = 0;
     }
@@ -250,7 +255,7 @@ public class GamePainter {
     /**
      * clears the canvas by drawing a white filled rectangle over everything.
      */
-    public void clearCanvas() {
+    private void clearCanvas() {
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
     }
 
@@ -258,7 +263,7 @@ public class GamePainter {
      * Draws the game board(fields, ladders) on the canvas using the coordinates stored in
      * gameBoard.
      */
-    public void drawBoard(GameBoard gameBoard) {
+    private void drawBoard(GameBoard gameBoard) {
         if (!boardBuilt) return;
         if (!sizeInitialized) resizeResources();
 
@@ -268,10 +273,12 @@ public class GamePainter {
             canvas.drawBitmap(boardImg, xOffset, yOffset, paint);
 
             GameField[] fields = gameBoard.getFields();
-            if (fieldImg != null) { // if a field image exists then use it, or fall back to ugly graphics
+            if (fieldImg != null) {
                 for (GameField field: fields) {
-                    if (field.isHighlighted())
+                    if (field.isHighlighted()){
                         canvas.drawBitmap(scaledFieldHighlightImg, field.getPos().x - fieldRadius + xOffset, canvasHeight - field.getPos().y - fieldRadius - yOffset, paint);
+                        break; // assuming there's never more than one highlighted field
+                    }
                 }
             }
         } else {
@@ -384,9 +391,9 @@ public class GamePainter {
     /**
      * Draws the player's pieces on the canvas.
      */
-    public void drawPieces(GameBoard gameBoard) {
+    private void drawPieces(GameBoard gameBoard) {
         if (!boardBuilt) return;
-        if(!sizeInitialized) resizeResources();
+        if (!sizeInitialized) resizeResources();
 
         int pieceSize = (int) (fieldRadius * PIECE_SIZE_FACTOR);
         Paint paint = new Paint();
@@ -413,7 +420,7 @@ public class GamePainter {
         }
     }
 
-    public Point quadraticBezier(Point start, Point mid, Point end, int steps, int currentStep) {
+    private Point quadraticBezier(Point start, Point mid, Point end, int steps, int currentStep) {
         double stepSize = 1.0/steps;
         double t = currentStep * stepSize;
 
@@ -451,4 +458,31 @@ public class GamePainter {
         }
         return p;
     }
+
+    public void drawFrame(GameBoard gameBoard) {
+        frameFinished = false;
+        paintTask.doInBackground(gameBoard);
+    }
+
+    public boolean getFinished() { return frameFinished; }
+
+    /**
+     * Runs the drawing methods asynchronously so the UI thread doesn't get locked.
+     * Doesn't seem to improve the performance, but enables skipping frames in case of a slowdown.
+     */
+    public class PaintTask extends AsyncTask<GameBoard, Void, Void> {
+
+        @Override
+        protected Void doInBackground(GameBoard... params) {
+            GameBoard gameBoard = params[0];
+
+            clearCanvas(); // clear previous frame
+            drawBoard(gameBoard); // draw the board on the canvas
+            drawPieces(gameBoard); // draw the players on the canvas
+            frameFinished = true;
+
+            return null;
+        }
+    }
+
 }

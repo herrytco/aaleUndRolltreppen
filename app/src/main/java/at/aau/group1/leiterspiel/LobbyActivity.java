@@ -103,11 +103,12 @@ public class LobbyActivity extends AppCompatActivity {
         intent.putExtra("PlayerTypes", playerTypes);
         intent.putExtra("CheatPermission", cheatsEnabled);
 
-        //makes system ui "inivisble"           --NOT WORKING PROPERLY YET!! HAS TO BE UPDATED!
+        //makes system ui "inivisible"           --NOT WORKING PROPERLY YET!! HAS TO BE UPDATED!
         int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
         view.setSystemUiVisibility(uiOptions);
 
-        startActivity(intent);
+        startActivity(intent); // start the game activity
+        finish(); // end this activity as soon as the game activity finished (?)
     }
 
     public void toggleCheats(View view) {
