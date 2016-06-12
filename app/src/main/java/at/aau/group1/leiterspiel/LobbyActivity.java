@@ -103,11 +103,12 @@ public class LobbyActivity extends AppCompatActivity {
         intent.putExtra("PlayerTypes", playerTypes);
         intent.putExtra("CheatPermission", cheatsEnabled);
 
-        //makes system ui "inivisble"           --NOT WORKING PROPERLY YET!! HAS TO BE UPDATED!
+        //makes system ui "inivisible"           --NOT WORKING PROPERLY YET!! HAS TO BE UPDATED!
         int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
         view.setSystemUiVisibility(uiOptions);
 
-        startActivity(intent);
+        startActivity(intent); // start the game activity
+        finish(); // end this activity as soon as the game activity finished (?)
     }
 
     public void toggleCheats(View view) {
@@ -161,6 +162,7 @@ public class LobbyActivity extends AppCompatActivity {
             if (index == 4) playerImage4.setBackground(getResources().getDrawable(R.drawable.no_player));
             if (index == 5) playerImage5.setBackground(getResources().getDrawable(R.drawable.no_player));
         }
+        updateUI();
     }
 
     private void togglePlayerType(int index) {
@@ -191,8 +193,25 @@ public class LobbyActivity extends AppCompatActivity {
                     if (index==4) typeButton4.setText(R.string.local);
                     if (index==5) typeButton5.setText(R.string.local);
                 }
+                break;
             }
         }
+        updateUI();
+    }
+
+    private void updateUI() {
+        if (playerTypes[0]==BOT || !playerSelection[0]) playerName0.setEnabled(false);
+        else playerName0.setEnabled(true);
+        if (playerTypes[1]==BOT || !playerSelection[1]) playerName1.setEnabled(false);
+        else playerName1.setEnabled(true);
+        if (playerTypes[2]==BOT || !playerSelection[2]) playerName2.setEnabled(false);
+        else playerName2.setEnabled(true);
+        if (playerTypes[3]==BOT || !playerSelection[3]) playerName3.setEnabled(false);
+        else playerName3.setEnabled(true);
+        if (playerTypes[4]==BOT || !playerSelection[4]) playerName4.setEnabled(false);
+        else playerName4.setEnabled(true);
+        if (playerTypes[5]==BOT || !playerSelection[5]) playerName5.setEnabled(false);
+        else playerName5.setEnabled(true);
     }
 
 }

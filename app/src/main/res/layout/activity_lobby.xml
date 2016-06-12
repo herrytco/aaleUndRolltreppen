@@ -45,26 +45,25 @@
 
                 <Button
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_marginLeft="20dp"
                     android:text="@string/bot"
                     android:id="@+id/playerType0"
                     android:onClick="togglePlayerType"
                     android:layout_gravity="center_vertical"
-                    android:background="#ffffff" />
+                    android:background="@drawable/rounded_button" />
 
                 <EditText
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_marginLeft="20dp"
                     android:layout_marginRight="20dp"
                     android:textAppearance="?android:attr/textAppearanceLarge"
                     android:text="@string/default_name"
                     android:id="@+id/playerName0"
                     android:gravity="center"
-                    android:editable="true"
                     android:enabled="false"
-                    android:background="#ffffff"
+                    android:background="@drawable/rounded_button"
                     android:alpha="0.5" />
             </LinearLayout>
             <LinearLayout
@@ -87,26 +86,25 @@
 
                 <Button
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_marginLeft="20dp"
                     android:text="@string/bot"
                     android:id="@+id/playerType1"
                     android:onClick="togglePlayerType"
                     android:layout_gravity="center_vertical"
-                    android:background="#ffffff" />
+                    android:background="@drawable/rounded_button" />
 
                 <EditText
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_marginLeft="20dp"
                     android:layout_marginRight="20dp"
                     android:textAppearance="?android:attr/textAppearanceLarge"
                     android:text="@string/bot"
                     android:id="@+id/playerName1"
                     android:gravity="center"
-                    android:editable="true"
                     android:enabled="false"
-                    android:background="#ffffff"
+                    android:background="@drawable/rounded_button"
                     android:alpha="0.5" />
             </LinearLayout>
             <LinearLayout
@@ -129,26 +127,25 @@
 
                 <Button
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_marginLeft="20dp"
                     android:text="@string/bot"
                     android:id="@+id/playerType2"
                     android:onClick="togglePlayerType"
                     android:layout_gravity="center_vertical"
-                    android:background="#ffffff" />
+                    android:background="@drawable/rounded_button" />
 
                 <EditText
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_marginLeft="20dp"
                     android:layout_marginRight="20dp"
                     android:textAppearance="?android:attr/textAppearanceLarge"
                     android:text="@string/bot"
                     android:id="@+id/playerName2"
                     android:gravity="center"
-                    android:editable="true"
                     android:enabled="false"
-                    android:background="#ffffff"
+                    android:background="@drawable/rounded_button"
                     android:alpha="0.5" />
             </LinearLayout>
             <LinearLayout
@@ -171,26 +168,25 @@
 
                 <Button
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_marginLeft="20dp"
                     android:text="@string/bot"
                     android:id="@+id/playerType3"
                     android:onClick="togglePlayerType"
                     android:layout_gravity="center_vertical"
-                    android:background="#ffffff" />
+                    android:background="@drawable/rounded_button" />
 
                 <EditText
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_marginLeft="20dp"
                     android:layout_marginRight="20dp"
                     android:textAppearance="?android:attr/textAppearanceLarge"
                     android:text="@string/bot"
                     android:id="@+id/playerName3"
                     android:gravity="center"
-                    android:editable="true"
                     android:enabled="false"
-                    android:background="#ffffff"
+                    android:background="@drawable/rounded_button"
                     android:alpha="0.5" />
             </LinearLayout>
             <LinearLayout
@@ -213,26 +209,25 @@
 
                 <Button
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_marginLeft="20dp"
                     android:text="@string/bot"
                     android:id="@+id/playerType4"
                     android:onClick="togglePlayerType"
                     android:layout_gravity="center_vertical"
-                    android:background="#ffffff" />
+                    android:background="@drawable/rounded_button" />
 
                 <EditText
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_marginLeft="20dp"
                     android:layout_marginRight="20dp"
                     android:textAppearance="?android:attr/textAppearanceLarge"
                     android:text="@string/bot"
                     android:id="@+id/playerName4"
                     android:gravity="center"
-                    android:editable="true"
                     android:enabled="false"
-                    android:background="#ffffff"
+                    android:background="@drawable/rounded_button"
                     android:alpha="0.5" />
             </LinearLayout>
             <LinearLayout
@@ -255,26 +250,25 @@
 
                 <Button
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_marginLeft="20dp"
                     android:text="@string/bot"
                     android:id="@+id/playerType5"
                     android:onClick="togglePlayerType"
                     android:layout_gravity="center_vertical"
-                    android:background="#ffffff" />
+                    android:background="@drawable/rounded_button" />
 
                 <EditText
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_marginLeft="20dp"
                     android:layout_marginRight="20dp"
                     android:textAppearance="?android:attr/textAppearanceLarge"
                     android:text="@string/bot"
                     android:id="@+id/playerName5"
                     android:gravity="center"
-                    android:editable="true"
                     android:enabled="false"
-                    android:background="#ffffff"
+                    android:background="@drawable/rounded_button"
                     android:alpha="0.5" />
             </LinearLayout>
 

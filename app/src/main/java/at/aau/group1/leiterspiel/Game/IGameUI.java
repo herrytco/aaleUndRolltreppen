@@ -13,7 +13,7 @@ public interface IGameUI {
     public void enableUI();
 
     public void showStatus(String status);
-    public void endGame();
+    public void endGame(Player winner);
     public void skipTurn();
 
 }

@@ -105,7 +105,7 @@ public class GameBoard {
         if (currentField + fields == numberOfFields-1) {
             currentField += fields;
             gameEnded = true;
-            Log.d("Tag", "Game ended. Winner is player "+playerID);
+            Log.d("GameBoard", "Game ended. Winner is player "+playerID);
         } else if (currentField + fields >= numberOfFields) {
             // do nothing in case the goal would be overshot
             return false;
@@ -127,7 +127,7 @@ public class GameBoard {
         isMoving = true;
         turnProgressIncrease = calculateProgressIncrease(previousField, currentField, ladderUsed);
 
-        Log.d("Tag", "Player " + playerID + " moved from field " + previousField + " to " + currentField);
+        Log.d("GameBoard", "Player " + playerID + " moved from field " + previousField + " to " + currentField);
         return gameEnded;
     }
 
@@ -143,9 +143,9 @@ public class GameBoard {
                 Math.abs(previous.y - current.y));
 
         int div = fieldDistance / stepDistance;
-        int duration = TURN_DURATION_MS * Math.max(div, 3); // 3 fields distance as minimum so the animation doesn't appear too fast over short distances
+        double duration = TURN_DURATION_MS * Math.max(div, 3); // 3 fields distance as minimum so the animation doesn't appear too fast over short distances
         if (ladder) duration *= 1.5;
-        double ratio = 1000/duration;
+        double ratio = 1000.0/duration;
         return 1.0/(fps/ratio);
     }
 
@@ -153,22 +153,6 @@ public class GameBoard {
         for (Piece p: pieces) {
             if (p.getPlayerID() == playerID) {
                 return p.getField() + fields >= getNumberOfFields();
-            }
-        }
-        return false;
-    }
-
-    public boolean checkLadderMove(int playerID, int fields) {
-        for (Piece p: pieces) {
-            if (p.getPlayerID() == playerID) {
-                for (Ladder ladder: ladders) {
-                    int nextField = p.getField() + fields;
-                    if (ladder.checkFields(nextField)) {
-                        int result = ladder.checkActivation(nextField);
-                        if (result != nextField) return true;
-                    }
-                }
-                return false;
             }
         }
         return false;
