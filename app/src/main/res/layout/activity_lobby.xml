@@ -5,12 +5,6 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_bitmap">
 
-    <!--ImageView
-        android:layout_width="match_parent"
-        android:layout_height="fill_parent"
-        android:src="@drawable/bg"
-        android:scaleType="centerCrop" /-->
-
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
@@ -64,7 +58,7 @@
                     android:gravity="center"
                     android:enabled="false"
                     android:background="@drawable/rounded_button"
-                    android:alpha="0.5" />
+                    android:alpha="0.7" />
             </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
@@ -105,7 +99,7 @@
                     android:gravity="center"
                     android:enabled="false"
                     android:background="@drawable/rounded_button"
-                    android:alpha="0.5" />
+                    android:alpha="0.7" />
             </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
@@ -146,7 +140,7 @@
                     android:gravity="center"
                     android:enabled="false"
                     android:background="@drawable/rounded_button"
-                    android:alpha="0.5" />
+                    android:alpha="0.7" />
             </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
@@ -187,7 +181,7 @@
                     android:gravity="center"
                     android:enabled="false"
                     android:background="@drawable/rounded_button"
-                    android:alpha="0.5" />
+                    android:alpha="0.7" />
             </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
@@ -228,7 +222,7 @@
                     android:gravity="center"
                     android:enabled="false"
                     android:background="@drawable/rounded_button"
-                    android:alpha="0.5" />
+                    android:alpha="0.7" />
             </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
@@ -269,7 +263,7 @@
                     android:gravity="center"
                     android:enabled="false"
                     android:background="@drawable/rounded_button"
-                    android:alpha="0.5" />
+                    android:alpha="0.7" />
             </LinearLayout>
 
         </LinearLayout>
@@ -298,7 +292,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/start_game"
                 android:id="@+id/startButton"
-                android:layout_marginTop="1dp"
+                android:layout_marginTop="10dp"
                 android:onClick="startGame"
                 android:layout_gravity="center_horizontal"
                 android:background="@color/blue"

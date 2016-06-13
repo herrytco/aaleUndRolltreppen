@@ -9,7 +9,8 @@
     <string name="offlinemode">Offline spielen</string>
     <string name="default_name">Name</string>
     <string name="press_back_again">Nochmal zurück drücken zum Beenden</string>
-    <string name="help">Hilfe</string>
+    <string name="controls">Steuerung</string>
+    <string name="game_rules">Spielregeln</string>
     <string name="forbid_cheats">Schummeln verbieten</string>
     <string name="allow_cheats">Schummeln erlauben</string>
     <string name="somebody_cheated">hat geschummelt!</string>
@@ -17,6 +18,9 @@
     <string name="loading">Lädt...</string>
     <string name="skip_turn">Zug nicht möglich</string>
     <string name="back_to_menu">Zurück zum Startbildschirm</string>
+    <string name="join_game">Beitreten</string>
+    <string name="searching_games">Suche nach Spielen läuft...</string>
+    <string name="search_games">Starte Suche</string>
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>

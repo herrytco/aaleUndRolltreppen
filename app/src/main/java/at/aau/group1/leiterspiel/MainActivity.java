@@ -41,23 +41,23 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-
-        // Start game(GameActivity) immediately
-//        startLobby(null);
     }
 
     public void startLogin(View view) {
-       // Intent intent = new Intent(getApplicationContext(), LobbyActivity.class);
-
-        Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
+        Intent intent = new Intent(getApplicationContext(), LobbyActivity.class);
+//        Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
         startActivity(intent);
     }
 
     public void startLobby(View view) {
-        // Intent intent = new Intent(getApplicationContext(), LobbyActivity.class);
-        Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
+         Intent intent = new Intent(getApplicationContext(), LobbyActivity.class);
+//        Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
         startActivity(intent);
     }
 
+    public void joinLobby(View view) {
+        Intent intent = new Intent(getApplicationContext(), JoinActivity.class);
+        startActivity(intent);
+    }
 
 }

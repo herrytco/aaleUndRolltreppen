@@ -7,11 +7,15 @@
     tools:context="at.aau.group1.leiterspiel.MainActivity"
     android:baselineAligned="false">
 
-    <!--ImageView
-        android:layout_width="match_parent"
-        android:layout_height="fill_parent"
-        android:src="@drawable/bg"
-        android:scaleType="centerCrop" /-->
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/logo"
+        android:id="@+id/imageView"
+        android:layout_marginLeft="30dp"
+        android:layout_marginRight="30dp"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="-80dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -27,14 +31,25 @@
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:gravity="center"
-            android:layout_margin="75dp">
+            android:layout_margin="70dp">
 
             <Button
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_margin="5dp"
                 android:text="@string/start_game"
                 android:id="@+id/startButton"
                 android:onClick="startLogin"
+                android:layout_gravity="center_vertical"
+                android:background="@color/blue"
+                android:textColor="#ffffff" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:text="@string/join_game"
+                android:onClick="joinLobby"
                 android:layout_gravity="center_vertical"
                 android:background="@color/blue"
                 android:textColor="#ffffff" />
@@ -44,7 +59,8 @@
             <Button
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/help"
+                android:layout_margin="5dp"
+                android:text="@string/controls"
                 android:id="@+id/helpButton"
                 android:enabled="true"
                 android:layout_gravity="center_vertical"
@@ -53,17 +69,18 @@
                 <!-- android:onClick="showHelp"
                 android:enabled="false"/-->
 
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:text="@string/game_rules"
+                android:id="@+id/rulesButton"
+                android:enabled="false"
+                android:layout_gravity="center_vertical"
+                android:background="@color/blue"
+                android:textColor="#ffffff" />
+
         </LinearLayout>
 
     </LinearLayout>
-
-    <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/logo"
-        android:id="@+id/imageView"
-        android:layout_marginLeft="30dp"
-        android:layout_marginRight="30dp"
-        android:layout_alignParentTop="true"
-        android:layout_marginTop="-80dp" />
 </RelativeLayout>
