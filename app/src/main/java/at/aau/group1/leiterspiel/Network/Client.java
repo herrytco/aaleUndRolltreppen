@@ -49,6 +49,8 @@ public class Client {
         parser.registerLobby(lobby);
     }
 
+    public void registerOnlineGameManager(IOnlineGameManager ogm) { parser.registerOnlineGameManager(ogm); }
+
     /**
      * Attempts to establish a connection to the server instance of the app.
      * @param serviceInfo The NsdServiceInfo of the service that this Client should connect to

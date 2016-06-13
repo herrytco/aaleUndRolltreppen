@@ -35,7 +35,9 @@
         android:id="@+id/searchButton"
         android:onClick="initDiscovery"
         android:background="@color/darkblue"
-        android:textColor="#ffffff" />
+        android:textColor="#ffffff"
+        android:focusable="true"
+        android:focusableInTouchMode="true"/>
 
     <ScrollView
         android:layout_width="match_parent"

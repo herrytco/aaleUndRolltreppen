@@ -23,6 +23,8 @@ public interface ILobby {
     // messages transmitting lobby/game information to the client, so the client can start an
     // identical game session.
 
+    public void assignIndex(int id, int index, String clientName);
+
     public void setPlayer(int id, int playerIndex, String playerType, String playerName);
 
     public void allowCheats(int id, boolean permitCheats);

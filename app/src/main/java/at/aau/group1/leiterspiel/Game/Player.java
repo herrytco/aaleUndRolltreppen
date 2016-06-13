@@ -11,12 +11,6 @@ public abstract class Player {
     private String name;
     public IPlayerObserver observer;
 
-    public Player() {
-        this.playerID = nextID;
-        nextID++;
-        this.name = "Player "+this.playerID;
-    }
-
     public Player(String name, IPlayerObserver observer) {
         this.playerID = nextID;
         nextID++;
@@ -39,6 +33,10 @@ public abstract class Player {
      * Tells player it's his turn.
      */
     public void poke() {
+
+    }
+
+    public void setDiceResult(int dice) {
 
     }
 

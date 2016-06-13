@@ -19,8 +19,14 @@
     <string name="skip_turn">Zug nicht möglich</string>
     <string name="back_to_menu">Zurück zum Startbildschirm</string>
     <string name="join_game">Beitreten</string>
+
+    <!-- Wi-fi online mode -->
     <string name="searching_games">Suche nach Spielen läuft...</string>
     <string name="search_games">Starte Suche</string>
+    <string name="connected_wait">Verbunden. Warte auf Spielstart...</string>
+    <string name="timeout">Fehler bei Verbindung: Zeitablauf</string>
+    <string name="waiting">Bitte warten...</string>
+    <string name="service_visible">Spiel ist nun im Netzwerk sichtbar</string>
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>
@@ -31,8 +37,7 @@
     <string name="error_invalid_password">Passwort zu kurz</string>
     <string name="error_incorrect_password">Falsches Passwort</string>
     <string name="error_field_required">Dieses Feld wird benötigt</string>
-    <string name="permission_rationale">"Diese App muss auf Ihre Kontakte zugreifen können."
-    </string>
+    <string name="permission_rationale">"Diese App muss auf Ihre Kontakte zugreifen können."</string>
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_login">Sign in</string>
 

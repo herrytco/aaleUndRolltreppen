@@ -1,6 +1,7 @@
 package at.aau.group1.leiterspiel;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.net.ConnectivityManager;
 import android.net.nsd.NsdServiceInfo;
@@ -42,18 +43,24 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
 
     public static Client client;
     public static MessageComposer composer;
+    public static int msgID = 0;
 
     private boolean discoveryStarted = false;
-    private NsdDiscovery discovery;
+    private static NsdDiscovery discovery;
     private Timer uiTimer;
     private TimerTask timerTask;
     private ArrayList<NsdServiceInfo> unhandledInfos = new ArrayList<>();
     private TreeMap<Integer, NsdServiceInfo> availableServices = new TreeMap<>();
 
     private boolean uiChanged = false;
-
     private String clientName = "Missing name";
-    private int msgID = 0;
+    private int playerIndex = -1;
+
+    // lobby settings, set by server
+    private boolean[] playerSelection = new boolean[LobbyActivity.MAX_PLAYERS];
+    private String[] playerNames = new String[LobbyActivity.MAX_PLAYERS];
+    private String[] playerTypes = new String[LobbyActivity.MAX_PLAYERS];
+    private boolean cheatsEnabled = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +70,7 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
         list = (LinearLayout) findViewById(R.id.servicesList);
         playerNameInput = (EditText) findViewById(R.id.clientNameView);
         startButton = (Button) findViewById(R.id.searchButton);
+        startButton.requestFocus();
     }
 
     private void updateUI() {
@@ -124,6 +132,12 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
             client.connectToServer(info);
         }
 
+        for (int i=0; i<list.getChildCount(); i++) {
+            list.getChildAt(i).setEnabled(false);
+        }
+        startButton.setText(getString(R.string.connected_wait));
+        startButton.setBackgroundColor(getResources().getColor(R.color.darkgreen));
+
         composer.joinLobby(msgID++);
         Log.d(TAG, "Attempt to join selected lobby...(ID "+(msgID-1)+")");
     }
@@ -159,26 +173,59 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
 
     @Override
     public void ack(int id) {
+        // TODO
         Log.d(TAG, "Ack for message ID "+id+" received");
     }
 
     @Override
     public void joinLobby(int id, String name) {
+        // do nothing as client
+    }
 
+    @Override
+    public void assignIndex(int id, int index, String clientName) {
+        if (this.clientName.equals(clientName)) playerIndex = index;
+
+        composer.ack(id);
     }
 
     @Override
     public void setPlayer(int id, int playerIndex, String playerType, String playerName) {
+        this.playerSelection[playerIndex] = true;
+        this.playerTypes[playerIndex] = playerType;
+        this.playerNames[playerIndex] = playerName;
 
+        composer.ack(id);
     }
 
     @Override
     public void allowCheats(int id, boolean permitCheats) {
+        this.cheatsEnabled = permitCheats;
 
+        composer.ack(id);
     }
 
     @Override
     public void startGame(int id) {
+        // This is the player controlled on this client instance, which means it's local instead of
+        // online here. See startGame() method in LobbyActivity.
+        for (int i=0; i<LobbyActivity.MAX_PLAYERS; i++) {
+            if (i == this.playerIndex && playerTypes[i].equals(LobbyActivity.ONLINE))
+                playerTypes[i] = LobbyActivity.LOCAL;
+        }
 
+        Intent intent = new Intent(getApplicationContext(), GameActivity.class);
+        // add all lobby settings to intent so GameActivity can use them in initGame()
+        intent.putExtra("PlayerSelection", playerSelection);
+        intent.putExtra("PlayerNames", playerNames);
+        intent.putExtra("PlayerTypes", playerTypes);
+        intent.putExtra("CheatPermission", cheatsEnabled);
+        intent.putExtra("ClientInstance", true);
+        intent.putExtra("PlayerIndex", playerIndex);
+
+        composer.ack(id);
+
+        startActivity(intent); // start the game activity
+        finish(); // end this activity as soon as the game activity finished
     }
 }

@@ -5,8 +5,10 @@ package at.aau.group1.leiterspiel.Game;
  */
 public interface IPlayerObserver {
 
-    public void move(int playerID, int diceRoll);
+    public void move(int playerID, int diceRoll, boolean localMove);
 
     public int rollDice(int playerID);
+
+//    public int getDiceResult();
 
 }

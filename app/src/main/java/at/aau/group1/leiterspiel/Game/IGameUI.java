@@ -19,4 +19,9 @@ public interface IGameUI {
     public void endGame(Player winner);
     public void skipTurn();
 
+    // online
+
+    public void setDice(int result);
+    public void checkForCheat();
+
 }

@@ -37,8 +37,15 @@ public class MessageComposer {
         sendMsg(msg);
     }
 
+    // ILobby
+
     public void joinLobby(int id) {
         String msg = name + sep + MessageParser.JOIN_LOBBY + sep + id;
+        sendMsg(msg);
+    }
+
+    public void assignIndex(int id, int index, String clientName) {
+        String msg = name + sep + MessageParser.ASSIGN_INDEX + sep + id + sep + index + sep + clientName;
         sendMsg(msg);
     }
 
@@ -55,6 +62,28 @@ public class MessageComposer {
 
     public void startGame(int id) {
         String msg = name + sep + MessageParser.START_GAME + sep + id;
+        sendMsg(msg);
+    }
+
+    // IOnlineGameManager
+
+    public void poke(int id, int index) {
+        String msg = name + sep + MessageParser.POKE + sep + id + sep + index;
+        sendMsg(msg);
+    }
+
+    public void setDice(int id, int dice) {
+        String msg = name + sep + MessageParser.SET_DICE + sep + id + sep + dice;
+        sendMsg(msg);
+    }
+
+    public void checkForCheat(int id) {
+        String msg = name + sep + MessageParser.CHECK_CHEAT + sep + id;
+        sendMsg(msg);
+    }
+
+    public void movePiece(int id, int fields) {
+        String msg = name + sep + MessageParser.MOVE_PIECE + sep + id + sep + fields;
         sendMsg(msg);
     }
 

@@ -27,7 +27,9 @@ import at.aau.group1.leiterspiel.Game.GameManager;
 import at.aau.group1.leiterspiel.Game.IGameUI;
 import at.aau.group1.leiterspiel.Game.Ladder;
 import at.aau.group1.leiterspiel.Game.LocalPlayer;
+import at.aau.group1.leiterspiel.Game.OnlinePlayer;
 import at.aau.group1.leiterspiel.Game.Player;
+import at.aau.group1.leiterspiel.Network.MessageComposer;
 
 public class GameActivity extends AppCompatActivity implements IGameUI {
 
@@ -46,6 +48,13 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     private int frameCount = 0;
     private long startTime = 0;
 
+    // online game settings
+    public static boolean clientInstance;
+    private int playerIndex; // index of the player playing on this app instance(on server always 0)
+    public static MessageComposer gameComposer;
+    public static int msgID;
+
+    // UI
     private int canvasWidth = 512;
     private int canvasHeight = 512;
     private int diceResult = 0;
@@ -161,6 +170,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         String[] playerNames = getIntent().getStringArrayExtra("PlayerNames");
         String[] playerTypes = getIntent().getStringArrayExtra("PlayerTypes");
         boolean cheatsEnabled = getIntent().getBooleanExtra("CheatPermission", false);
+        clientInstance = getIntent().getBooleanExtra("ClientInstance", false);
+        playerIndex = getIntent().getIntExtra("PlayerIndex", -1);
 
         gameManager = new GameManager(this);
         gameManager.setFps(FPS);
@@ -184,7 +195,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         gameManager.addLadder(new Ladder(Ladder.LadderType.DOWN, 23, 37));
         gameManager.addLadder(new Ladder(Ladder.LadderType.UP, 39, 46));
         gameManager.addLadder(new Ladder(Ladder.LadderType.DOWN, 34, 57));
-        // for a lesson of how not to do random-generated content, use this:
+        // for a lesson on how not to do random-generated content, use this:
 //        gameManager.setGameBoard(new BoardGenerator(60, 8).generateBoard());
 
         gameManager.setCheatsEnabled(cheatsEnabled);
@@ -199,8 +210,26 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
                     player = new BotPlayer(gameManager);
                 if (playerTypes[n].equals(LobbyActivity.LOCAL))
                     player = new LocalPlayer(playerNames[n], gameManager);
+                if (playerTypes[n].equals(LobbyActivity.ONLINE))
+                    player = new OnlinePlayer(playerNames[n], gameManager);
                 gameManager.addPlayer(player);
             }
+        }
+
+        // get current composer for further use, and register the GameManager as message receiver
+        if (clientInstance && JoinActivity.composer != null) {
+            gameComposer = JoinActivity.composer;
+            this.msgID = JoinActivity.msgID;
+            JoinActivity.client.registerOnlineGameManager(gameManager);
+        }
+        else if (!clientInstance && LobbyActivity.composer != null) {
+            gameComposer = LobbyActivity.composer;
+            this.msgID = LobbyActivity.msgID;
+            LobbyActivity.server.registerOnlineGameManager(gameManager);
+        }
+        else {
+            gameComposer = new MessageComposer("Dummy", false); // assume offline game
+            msgID = 0;
         }
 
         gameInitialized = true;
@@ -252,6 +281,11 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         if (drawTask!=null) drawTask.cancel(); // stop graphics output
         if (graphicsTimer!=null) graphicsTimer.cancel();
         graphicsActive = false;
+
+        // unregister service in the network
+        if (!clientInstance) {
+            if (LobbyActivity.server != null) LobbyActivity.server.disconnect();
+        }
     }
 
     @Override
@@ -364,26 +398,39 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
      * @return The number rolled with the dice
      */
     public int rollDice(View view) {
-        soundManager.playDiceSound();
-
         int result = random.nextInt(6)+1;
+        setDice(result);
+
+        gameComposer.setDice(msgID++, result);
+//        waitForAcknowledgement(GameActivity.msgID-1);
+
+        return result;
+    }
+
+    public void setDice(int result) {
+        soundManager.playDiceSound();
         diceResult = result;
         uiChanged = true;
 
         gameManager.highlightField(result);
         gameManager.setPlayerRolled(true);
         disableUI(); // make sure the player can't roll more than once
-
-        return result;
     }
 
-    public void checkForCheat(View view) {
+    @Override
+    public void checkForCheat() {
         String name = gameManager.checkForCheat();
         if (name == null)
             showStatus(getString(R.string.nobody)+" "+getString(R.string.somebody_cheated));
         else
             showStatus(name+" "+getString(R.string.somebody_cheated));
         uiChanged = true;
+    }
+
+    public void checkForCheat(View view) {
+        checkForCheat();
+
+        gameComposer.checkForCheat(msgID++);
     }
 
     /**
@@ -434,4 +481,23 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         resetGame();
         finish(); // end the activity
     }
+
+//    /**
+//     * Waits for TIMEOUT ms for an acknowledgement with the specified ID.
+//     * If no correct ack message is received in time, return false.
+//     *
+//     * @param id ID of the expected ack message
+//     * @return true if the acknowledgement was successfully received
+//     */
+//    private boolean waitForAcknowledgement(int id) {
+//        // wait for ack
+//        long start = System.currentTimeMillis();
+//        while (lastAckID != id) {
+//            // if no acknowledgement comes in time
+//            if (System.currentTimeMillis() - start >= TIMEOUT) {
+//                return false;
+//            }
+//        }
+//        return true;
+//    }
 }

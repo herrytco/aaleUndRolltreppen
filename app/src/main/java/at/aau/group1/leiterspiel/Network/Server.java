@@ -51,6 +51,8 @@ public class Server {
         parser.registerLobby(lobby);
     }
 
+    public void registerOnlineGameManager(IOnlineGameManager ogm) { parser.registerOnlineGameManager(ogm); }
+
     /**
      * Initializes the socket on the specified port and starts the background communication.
      * @param serverSocket The ServerSocket initialized with a port number
