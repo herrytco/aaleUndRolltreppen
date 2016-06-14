@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import at.aau.group1.leiterspiel.GameActivity;
 import at.aau.group1.leiterspiel.JoinActivity;
 import at.aau.group1.leiterspiel.LobbyActivity;
+import at.aau.group1.leiterspiel.Network.AckChecker;
 import at.aau.group1.leiterspiel.Network.IOnlineGameManager;
 
 /**
@@ -29,8 +30,7 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
 
     private IGameUI ui;
 
-    private final int TIMEOUT = 2000;
-    private int lastAckID = -1;
+    private AckChecker ackChecker = new AckChecker();
 
     public GameManager(IGameUI ui) {
         this.ui = ui;
@@ -38,14 +38,6 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
         players = new ArrayList<>();
         init();
     }
-
-//    public GameManager(IGameUI ui, boolean clientInstance, GameBoard gameBoard, ArrayList<Player> players) {
-//        this.ui = ui;
-//        this.clientInstance = clientInstance;
-//        this.gameBoard = gameBoard;
-//        this.players = players;
-//        init();
-//    }
 
     public void setFps(int fps) {
         gameBoard.setFps(fps);
@@ -163,7 +155,7 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
     }
 
     private void switchToNextPlayer() {
-        if (GameActivity.clientInstance) return; // let the server switch the players
+        if (GameActivity.online && GameActivity.clientInstance) return; // let the server switch the players
 
         if (!active) return;
         // switching to the next player
@@ -178,8 +170,10 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
 
         updateUI();
 
-        GameActivity.gameComposer.poke(GameActivity.msgID++, activePlayer);
-        waitForAcknowledgement(GameActivity.msgID-1);
+        if (GameActivity.online) {
+            GameActivity.gameComposer.poke(GameActivity.msgID++, activePlayer);
+            ackChecker.waitForAcknowledgement(GameActivity.msgID - 1);
+        }
 
         if (active) players.get(activePlayer).poke();
     }
@@ -216,11 +210,6 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
         return number;
     }
 
-//    @Override
-//    public int getDiceResult() {
-//        return latestDiceResult;
-//    }
-
     /**
      * Highlights the rolled field.
      *
@@ -248,7 +237,10 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
         if (players.get(activePlayer).expectsTouchInput()) {
             // check if the turn should be skipped
             if(gameBoard.checkOvershootingMove(players.get(activePlayer).getPlayerID(), latestDiceResult)) {
-                switchToNextPlayer();
+                // if this is the server, switch to the next player, otherwise tell the server to
+                // skip to the next player
+                if (!GameActivity.online || !GameActivity.clientInstance) switchToNextPlayer();
+                else GameActivity.gameComposer.skip(GameActivity.msgID++);
                 return;
             }
 
@@ -262,7 +254,7 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
 
     @Override
     public void ack(int id) {
-        lastAckID = id;
+        ackChecker.setLastAckID(id);
     }
 
     @Override
@@ -271,6 +263,16 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
         activePlayer = index;
         updateUI();
         players.get(activePlayer).poke();
+        GameActivity.gameComposer.ack(id);
+    }
+
+    @Override
+    public void skip(int id, String player) {
+        if (!GameActivity.clientInstance) {
+            if (players.get(activePlayer).getName().equals(player)) {
+                switchToNextPlayer();
+            }
+        }
         GameActivity.gameComposer.ack(id);
     }
 
@@ -297,24 +299,4 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
         }
         GameActivity.gameComposer.ack(id);
     }
-
-    /**
-     * Waits for TIMEOUT ms for an acknowledgement with the specified ID.
-     * If no correct ack message is received in time, return false.
-     *
-     * @param id ID of the expected ack message
-     * @return true if the acknowledgement was successfully received
-     */
-    private boolean waitForAcknowledgement(int id) {
-        // wait for ack
-        long start = System.currentTimeMillis();
-        while (lastAckID != id) {
-            // if no acknowledgement comes in time
-            if (System.currentTimeMillis() - start >= TIMEOUT) {
-                return false;
-            }
-        }
-        return true;
-    }
-
 }

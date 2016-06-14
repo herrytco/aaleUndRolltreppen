@@ -43,15 +43,8 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public void startLogin(View view) {
-        Intent intent = new Intent(getApplicationContext(), LobbyActivity.class);
-//        Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
-        startActivity(intent);
-    }
-
     public void startLobby(View view) {
          Intent intent = new Intent(getApplicationContext(), LobbyActivity.class);
-//        Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
         startActivity(intent);
     }
 

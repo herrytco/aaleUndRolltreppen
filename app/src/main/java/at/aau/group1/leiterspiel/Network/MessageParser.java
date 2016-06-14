@@ -23,6 +23,7 @@ public class MessageParser {
     public static final String NO = "n";
     // IOnlineGameManager-related commands
     public static final String POKE = "poke";
+    public static final String SKIP = "skip";
     public static final String SET_DICE = "dice";
     public static final String CHECK_CHEAT = "checkcheat";
     public static final String MOVE_PIECE = "move";
@@ -52,7 +53,7 @@ public class MessageParser {
         String command = args[1];
         int id = Integer.parseInt(args[2]);
 
-        if (lobby != null) { // lobby-related commands can be skipped if no related listener exists
+        if (lobby != null) { // commands can be skipped if no related listener exists
             try {
                 if (command.equals(ACK)) {
                     lobby.ack(id);
@@ -87,7 +88,7 @@ public class MessageParser {
             }
         }
 
-        if (gameManager != null) { // lobby-related commands can be skipped if no related listener exists
+        if (gameManager != null) { // commands can be skipped if no related listener exists
             try {
                 if (command.equals(ACK)) {
                     gameManager.ack(id);
@@ -95,6 +96,9 @@ public class MessageParser {
                 if (command.equals(POKE)) {
                     int index = Integer.parseInt(args[3]);
                     gameManager.poke(id, index);
+                }
+                if (command.equals(SKIP)) {
+                    gameManager.skip(id, name);
                 }
                 if (command.equals(SET_DICE)) {
                     int dice = Integer.parseInt(args[3]);

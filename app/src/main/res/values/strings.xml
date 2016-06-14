@@ -6,41 +6,26 @@
     <string name="local">Lokal</string>
     <string name="bot">Bot</string>
     <string name="online">Online</string>
-    <string name="offlinemode">Offline spielen</string>
     <string name="default_name">Name</string>
-    <string name="press_back_again">Nochmal zurück drücken zum Beenden</string>
+    <string name="press_back_again">Noch einmal zurück drücken um das Spiel zu beenden</string>
     <string name="controls">Steuerung</string>
-    <string name="game_rules">Spielregeln</string>
+    <string name="game_rules">Spielanleitung</string>
     <string name="forbid_cheats">Schummeln verbieten</string>
     <string name="allow_cheats">Schummeln erlauben</string>
     <string name="somebody_cheated">hat geschummelt!</string>
     <string name="nobody">Niemand</string>
     <string name="loading">Lädt...</string>
     <string name="skip_turn">Zug nicht möglich</string>
-    <string name="back_to_menu">Zurück zum Startbildschirm</string>
-    <string name="join_game">Beitreten</string>
+    <string name="back_to_menu">Zurück zum Hauptmenü</string>
+    <string name="join_game">Spiel beitreten</string>
 
     <!-- Wi-fi online mode -->
-    <string name="searching_games">Suche nach Spielen läuft...</string>
-    <string name="search_games">Starte Suche</string>
+    <string name="searching_games">Suche läuft...</string>
+    <string name="search_games">Spiele suchen</string>
+    <string name="connecting">Verbinde...</string>
+    <string name="connection_failed">Verbindungsaufbau gescheitert</string>
     <string name="connected_wait">Verbunden. Warte auf Spielstart...</string>
     <string name="timeout">Fehler bei Verbindung: Zeitablauf</string>
     <string name="waiting">Bitte warten...</string>
     <string name="service_visible">Spiel ist nun im Netzwerk sichtbar</string>
-
-    <!-- Strings related to login -->
-    <string name="prompt_email">Email</string>
-    <string name="prompt_password">Passwort (optional)</string>
-    <string name="action_sign_in">Einloggen oder Registrieren</string>
-    <string name="action_sign_in_short">Einloggen</string>
-    <string name="error_invalid_email">Die angegebene Email-Adresse ist ungültig</string>
-    <string name="error_invalid_password">Passwort zu kurz</string>
-    <string name="error_incorrect_password">Falsches Passwort</string>
-    <string name="error_field_required">Dieses Feld wird benötigt</string>
-    <string name="permission_rationale">"Diese App muss auf Ihre Kontakte zugreifen können."</string>
-    <string name="title_activity_main">MainActivity</string>
-    <string name="title_activity_login">Sign in</string>
-
-    <string name="spongefont">/assets/fonts/spongefont.ttf</string>
-    <string name="offline_spielen">Offline spielen</string>
 </resources>

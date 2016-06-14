@@ -35,9 +35,6 @@ public class BotPlayer extends Player {
             };
             timer.schedule(waitTask, 750);
         }
-//        else {
-//            observer.move(getPlayerID(), observer.getDiceResult(), false);
-//        }
     }
 
     @Override

@@ -13,7 +13,9 @@ public interface IOnlineGameManager {
      */
     public void ack(int id);
 
-    public void poke(int id, int index); // not sure if needed
+    public void poke(int id, int index);
+
+    public void skip(int id, String player);
 
     public void setDice(int id, int dice);
 

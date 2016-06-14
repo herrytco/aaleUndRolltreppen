@@ -9,6 +9,4 @@ public interface IPlayerObserver {
 
     public int rollDice(int playerID);
 
-//    public int getDiceResult();
-
 }

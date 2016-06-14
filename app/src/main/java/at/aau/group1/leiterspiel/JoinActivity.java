@@ -1,35 +1,25 @@
 package at.aau.group1.leiterspiel;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ServiceInfo;
-import android.net.ConnectivityManager;
 import android.net.nsd.NsdServiceInfo;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
 
+import at.aau.group1.leiterspiel.Network.AckChecker;
 import at.aau.group1.leiterspiel.Network.Client;
 import at.aau.group1.leiterspiel.Network.ILobby;
 import at.aau.group1.leiterspiel.Network.INsdObserver;
 import at.aau.group1.leiterspiel.Network.MessageComposer;
-import at.aau.group1.leiterspiel.Network.MessageParser;
 import at.aau.group1.leiterspiel.Network.NsdDiscovery;
 import at.aau.group1.leiterspiel.Network.NsdService;
 
@@ -45,6 +35,7 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
     public static MessageComposer composer;
     public static int msgID = 0;
 
+    private AckChecker ackChecker = new AckChecker();
     private boolean discoveryStarted = false;
     private static NsdDiscovery discovery;
     private Timer uiTimer;
@@ -70,15 +61,21 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
         list = (LinearLayout) findViewById(R.id.servicesList);
         playerNameInput = (EditText) findViewById(R.id.clientNameView);
         startButton = (Button) findViewById(R.id.searchButton);
-        startButton.requestFocus();
+
+        // Prevents the keyboard from immediately appearing, but then the button has to be pressed
+        // twice before it reacts...because Android.
+//        startButton.setFocusableInTouchMode(true);
+//        startButton.requestFocus();
     }
 
     private void updateUI() {
         if (uiChanged) {
             for (NsdServiceInfo info: unhandledInfos) {
                 String serverName = info.getServiceName().replace(NsdService.SERVICE_NAME, "");
+                // space gets transmitted as \032
                 serverName = serverName.replace("\\032", " ");
 
+                // create a new button in the server list for connecting
                 Button button = new Button(getApplicationContext());
                 button.setText(serverName);
                 button.setBackgroundColor(getResources().getColor(R.color.blue));
@@ -135,11 +132,20 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
         for (int i=0; i<list.getChildCount(); i++) {
             list.getChildAt(i).setEnabled(false);
         }
-        startButton.setText(getString(R.string.connected_wait));
-        startButton.setBackgroundColor(getResources().getColor(R.color.darkgreen));
+        // in case connecting takes a bit longer
+        startButton.setText(getString(R.string.connecting));
+        startButton.setBackgroundColor(getResources().getColor(R.color.orange));
 
         composer.joinLobby(msgID++);
         Log.d(TAG, "Attempt to join selected lobby...(ID "+(msgID-1)+")");
+
+        if (ackChecker.waitForAcknowledgement(msgID-1)) {
+            startButton.setText(getString(R.string.connected_wait));
+            startButton.setBackgroundColor(getResources().getColor(R.color.darkgreen));
+        } else {
+            startButton.setText(getString(R.string.connection_failed));
+            startButton.setBackgroundColor(getResources().getColor(R.color.darkred));
+        }
     }
 
     public void initDiscovery(View view) {
@@ -173,8 +179,7 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
 
     @Override
     public void ack(int id) {
-        // TODO
-        Log.d(TAG, "Ack for message ID "+id+" received");
+        ackChecker.setLastAckID(id);
     }
 
     @Override
@@ -222,6 +227,7 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
         intent.putExtra("CheatPermission", cheatsEnabled);
         intent.putExtra("ClientInstance", true);
         intent.putExtra("PlayerIndex", playerIndex);
+        intent.putExtra("Online", true);
 
         composer.ack(id);
 

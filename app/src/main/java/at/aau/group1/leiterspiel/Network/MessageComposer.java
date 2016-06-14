@@ -19,6 +19,8 @@ public class MessageComposer {
         this.serverSide = isServerSide;
     }
 
+    public void changeName(String name) { this.name = name; }
+
     public void registerServer(Server server) {
         this.server = server;
     }
@@ -69,6 +71,11 @@ public class MessageComposer {
 
     public void poke(int id, int index) {
         String msg = name + sep + MessageParser.POKE + sep + id + sep + index;
+        sendMsg(msg);
+    }
+
+    public void skip(int id) {
+        String msg = name + sep + MessageParser.SKIP + sep + id;
         sendMsg(msg);
     }
 

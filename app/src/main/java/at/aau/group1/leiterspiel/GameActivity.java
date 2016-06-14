@@ -49,6 +49,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     private long startTime = 0;
 
     // online game settings
+    public static boolean online;
     public static boolean clientInstance;
     private int playerIndex; // index of the player playing on this app instance(on server always 0)
     public static MessageComposer gameComposer;
@@ -57,7 +58,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     // UI
     private int canvasWidth = 512;
     private int canvasHeight = 512;
-    private int diceResult = 0;
+    private static int diceResult = 0;
     private static String status;
     private static boolean uiChanged = true;
     private static boolean uiEnabled = false;
@@ -98,7 +99,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     private static boolean gameInitialized = false;
     private static boolean uiInitialized = false;
 
-    private Player winner;
+    private static Player winner;
     private long lastBackPress = 0;
 
     private Random random = new Random();
@@ -172,6 +173,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         boolean cheatsEnabled = getIntent().getBooleanExtra("CheatPermission", false);
         clientInstance = getIntent().getBooleanExtra("ClientInstance", false);
         playerIndex = getIntent().getIntExtra("PlayerIndex", -1);
+        online = getIntent().getBooleanExtra("Online", false);
 
         gameManager = new GameManager(this);
         gameManager.setFps(FPS);
@@ -402,7 +404,6 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         setDice(result);
 
         gameComposer.setDice(msgID++, result);
-//        waitForAcknowledgement(GameActivity.msgID-1);
 
         return result;
     }
@@ -482,22 +483,4 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         finish(); // end the activity
     }
 
-//    /**
-//     * Waits for TIMEOUT ms for an acknowledgement with the specified ID.
-//     * If no correct ack message is received in time, return false.
-//     *
-//     * @param id ID of the expected ack message
-//     * @return true if the acknowledgement was successfully received
-//     */
-//    private boolean waitForAcknowledgement(int id) {
-//        // wait for ack
-//        long start = System.currentTimeMillis();
-//        while (lastAckID != id) {
-//            // if no acknowledgement comes in time
-//            if (System.currentTimeMillis() - start >= TIMEOUT) {
-//                return false;
-//            }
-//        }
-//        return true;
-//    }
 }
