@@ -18,6 +18,7 @@ public interface IGameUI {
     public void showStatus(String status);
     public void endGame(Player winner);
     public void skipTurn();
+    public void notifyClientDisconnect();
 
     // online
 

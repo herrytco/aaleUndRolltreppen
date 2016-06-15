@@ -40,6 +40,8 @@ public abstract class Player {
 
     }
 
+    public boolean isOnline() { return false; }
+
     /**
      * @return true if this Player reacts to touch input, otherwise false
      */

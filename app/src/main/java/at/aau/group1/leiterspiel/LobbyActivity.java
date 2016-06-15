@@ -1,7 +1,6 @@
 package at.aau.group1.leiterspiel;
 
 import android.content.Intent;
-import android.content.pm.ServiceInfo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -20,7 +19,6 @@ import at.aau.group1.leiterspiel.Network.AckChecker;
 import at.aau.group1.leiterspiel.Network.ICommListener;
 import at.aau.group1.leiterspiel.Network.ILobby;
 import at.aau.group1.leiterspiel.Network.MessageComposer;
-import at.aau.group1.leiterspiel.Network.MessageParser;
 import at.aau.group1.leiterspiel.Network.NsdService;
 import at.aau.group1.leiterspiel.Network.Server;
 
@@ -35,30 +33,35 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
     public static final String BOT = "Bot";
     public static final String LOCAL = "Local";
     public static final String ONLINE = "Online";
+    private final int BOARD_TYPES = 3;
+
+    private final int MAX_TURN_SKIPS = 3;
+    private static int turnSkips = 1;
 
     private static NsdService service;
-    private String serverName = "Missing name";
-    private boolean serviceActive = false;
-    private Timer uiTimer;
-    private TimerTask timerTask;
-    private String newPlayer;
-    private int openOnlineSlots = 0;
-    private boolean uiChanged = false;
+    private static String serverName = "Missing name";
+    private static boolean serviceActive = false;
+    private static Timer uiTimer;
+    private static TimerTask timerTask;
+    private static String newPlayer;
+    private static int openOnlineSlots = 0;
+    private static boolean uiChanged = false;
     // true if an online client is connected, otherwise start an offline game
-    private boolean online = false;
+    private static boolean online = false;
 
     public static Server server;
     public static MessageComposer composer;
 
-    private String[] playerNames = new String[MAX_PLAYERS];
-    private boolean[] playerSelection = new boolean[MAX_PLAYERS];
-    private String[] playerTypes = new String[MAX_PLAYERS];
+    private static String[] playerNames = new String[MAX_PLAYERS];
+    private static boolean[] playerSelection = new boolean[MAX_PLAYERS];
+    private static String[] playerTypes = new String[MAX_PLAYERS];
 
     private LinearLayout list;
     private ImageButton[] playerImages = new ImageButton[MAX_PLAYERS];
     private Button[] typeButtons = new Button[MAX_PLAYERS];
     private EditText[] playerNameFields = new EditText[MAX_PLAYERS];
     private Button cheatToggleButton;
+    private Button boardToggleButton;
     private int[] playerIcons = {
             R.drawable.patrick,
             R.drawable.sponge,
@@ -68,6 +71,7 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
             R.drawable.sandy };
 
     private boolean cheatsEnabled = false;
+    private int boardType = 0;
 
     public static int msgID = 0;
     private AckChecker ackChecker = new AckChecker();
@@ -97,6 +101,7 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
         }
 
         cheatToggleButton = (Button) findViewById(R.id.cheatToggleButton);
+        boardToggleButton = (Button) findViewById(R.id.boardToggleButton);
 
         fs.setDecorView(getWindow().getDecorView());
         fs.hideSystemUI();
@@ -124,8 +129,8 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
 
     private void startService() {
         if (!serviceActive) {
-//            serverName = playerName0.getText().toString();
-            serverName = playerNameFields[0].getText().toString();
+            serverName = String.valueOf(playerNameFields[0].getText());
+            if (serverName.equals("")) serverName = getString(R.string.default_name);
 
             service = new NsdService(getApplicationContext(), serverName);
             service.startService();
@@ -190,22 +195,28 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
     }
 
     public void startGame(View view) {
-        for (int i=0; i<MAX_PLAYERS; i++) {
-            playerNames[i] = String.valueOf(playerNameFields[i].getText());
+        if (openOnlineSlots > 0) {
+            Toast.makeText(getApplicationContext(), getString(R.string.open_slot), Toast.LENGTH_SHORT).show();
+            return;
         }
 
-        // in case the server-side player changes the name before starting the game, update the name just to be safe
-        composer.changeName(playerNames[0]);
+        for (int i=0; i<MAX_PLAYERS; i++) {
+            playerNames[i] = String.valueOf(playerNameFields[i].getText());
+            if (playerNames[i].equals("")) playerNames[i] = getString(R.string.default_name);
+        }
 
         // transmit lobby information to the client
         if (online) {
+            // in case the server-side player changes the name before starting the game, update the name just to be safe
+            composer.changeName(playerNames[0]);
+
             for (int i = 0; i < MAX_PLAYERS; i++) {
                 if (playerSelection[i]) { // if the player on this index is enabled
                     String type = playerTypes[i];
                     if (type.equals(ONLINE)) {
                         composer.assignIndex(msgID++, i, playerNames[i]);
                         if (!ackChecker.waitForAcknowledgement(msgID-1)) {
-                            Toast.makeText(getApplicationContext(), getString(R.string.timeout), Toast.LENGTH_SHORT);
+                            Toast.makeText(getApplicationContext(), getString(R.string.timeout), Toast.LENGTH_SHORT).show();
                             return;
                         }
                     }
@@ -222,7 +233,7 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
                     composer.setPlayer(msgID++, i, type, playerNames[i]);
 
                     if (!ackChecker.waitForAcknowledgement(msgID-1)) {
-                        Toast.makeText(getApplicationContext(), getString(R.string.timeout), Toast.LENGTH_SHORT);
+                        Toast.makeText(getApplicationContext(), getString(R.string.timeout), Toast.LENGTH_SHORT).show();
                         return;
                     }
                 }
@@ -235,6 +246,8 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
         intent.putExtra("PlayerNames", playerNames);
         intent.putExtra("PlayerTypes", playerTypes);
         intent.putExtra("CheatPermission", cheatsEnabled);
+        intent.putExtra("TurnSkips", turnSkips);
+        intent.putExtra("BoardType", boardType);
         intent.putExtra("ClientInstance", false);
         intent.putExtra("PlayerIndex", 0);
         intent.putExtra("Online", online);
@@ -245,14 +258,19 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
 
         // transmit final settings and start the game on all connected instances
         if (online) {
-            composer.allowCheats(msgID++, cheatsEnabled);
+            composer.allowCheats(msgID++, cheatsEnabled, turnSkips);
             if (!ackChecker.waitForAcknowledgement(msgID-1)) {
-                Toast.makeText(getApplicationContext(), getString(R.string.timeout), Toast.LENGTH_SHORT);
+                Toast.makeText(getApplicationContext(), getString(R.string.timeout), Toast.LENGTH_SHORT).show();
+                return;
+            }
+            composer.setBoardType(msgID++, boardType);
+            if (!ackChecker.waitForAcknowledgement(msgID-1)) {
+                Toast.makeText(getApplicationContext(), getString(R.string.timeout), Toast.LENGTH_SHORT).show();
                 return;
             }
             composer.startGame(msgID++);
             if (!ackChecker.waitForAcknowledgement(msgID-1)) {
-                Toast.makeText(getApplicationContext(), getString(R.string.timeout), Toast.LENGTH_SHORT);
+                Toast.makeText(getApplicationContext(), getString(R.string.timeout), Toast.LENGTH_SHORT).show();
                 return;
             }
         }
@@ -263,11 +281,23 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
     }
 
     public void toggleCheats(View view) {
-        cheatsEnabled = !cheatsEnabled;
-        if (cheatsEnabled)
-            cheatToggleButton.setText(getResources().getString(R.string.forbid_cheats));
-        else
-            cheatToggleButton.setText(getResources().getString(R.string.allow_cheats));
+        if (!cheatsEnabled) {
+            cheatsEnabled = true;
+            turnSkips = 0;
+        }
+        if (cheatsEnabled){
+            if (++turnSkips > MAX_TURN_SKIPS) {
+                cheatsEnabled = false;
+                cheatToggleButton.setText(getString(R.string.allow_cheats));
+            } else cheatToggleButton.setText(getString(R.string.punishment)+": "+turnSkips+"x "+getString(R.string.skip_cheater));
+        }
+    }
+
+    public void toggleGameBoard(View view) {
+        if (++boardType >= BOARD_TYPES) boardType = 0;
+        if (boardType == 0) boardToggleButton.setText(getString(R.string.default_eels));
+        if (boardType == 1) boardToggleButton.setText(getString(R.string.many_eels));
+        if (boardType == 2) boardToggleButton.setText(getString(R.string.no_eels));
     }
 
     public void togglePlayer(View view) {
@@ -294,8 +324,13 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
         for (int i=1; i<MAX_PLAYERS; i++) {
             if (index == i) {
                 playerNameFields[i].setEnabled(playerSelection[i]);
-                if (playerSelection[i]) playerImages[i].setBackground(getResources().getDrawable(playerIcons[i]));
-                else playerImages[i].setBackground(getResources().getDrawable(R.drawable.no_player));
+                if (playerSelection[i]) {
+                    playerImages[i].setBackground(getResources().getDrawable(playerIcons[i]));
+                    if (playerTypes[i].equals(ONLINE)) openOnlineSlots++;
+                } else {
+                    playerImages[i].setBackground(getResources().getDrawable(R.drawable.no_player));
+                    if (playerTypes[i].equals(ONLINE)) openOnlineSlots--;
+                }
                 break;
             }
         }
@@ -308,7 +343,7 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
                 if (playerTypes[i] == BOT) { // if bot
                     playerTypes[i] = ONLINE;
                     typeButtons[i].setText(R.string.online);
-                    playerNameFields[i].setText(R.string.waiting);
+                    playerNameFields[i].setHint(R.string.waiting);
                     openOnlineSlots++;
                     // start service if an online player is requested
                     startService();
@@ -320,6 +355,7 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
                 } else { // if online
                     playerTypes[i] = LOCAL;
                     typeButtons[i].setText(R.string.local);
+                    playerNameFields[i].setHint(R.string.default_name);
                     openOnlineSlots--;
                 }
                 break;
@@ -369,7 +405,12 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
     }
 
     @Override
-    public void allowCheats(int id, boolean permitCheats) {
+    public void allowCheats(int id, boolean permitCheats, int turnSkips) {
+        // this is the server, so ignore server-exclusive messages
+    }
+
+    @Override
+    public void setBoardType(int id, int type) {
         // this is the server, so ignore server-exclusive messages
     }
 

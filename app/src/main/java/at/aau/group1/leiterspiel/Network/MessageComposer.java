@@ -52,13 +52,18 @@ public class MessageComposer {
     }
 
     public void setPlayer(int id, int playerIndex, String playerType, String playerName) {
-        String msg = name + sep + MessageParser.SET_PLAYER + sep + id + sep + playerIndex + sep + playerType + sep +playerName;
+        String msg = name + sep + MessageParser.SET_PLAYER + sep + id + sep + playerIndex + sep + playerType + sep + playerName;
         sendMsg(msg);
     }
 
-    public void allowCheats(int id, boolean permitCheats) {
+    public void allowCheats(int id, boolean permitCheats, int turnSkips) {
         String permission = permitCheats ? MessageParser.YES : MessageParser.NO;
-        String msg = name + sep + MessageParser.ALLOW_CHEATS + sep + id + sep + permission;
+        String msg = name + sep + MessageParser.ALLOW_CHEATS + sep + id + sep + permission + sep + turnSkips;
+        sendMsg(msg);
+    }
+
+    public void setBoardType(int id, int type) {
+        String msg = name + sep + MessageParser.SET_BOARD + sep + id + sep + type;
         sendMsg(msg);
     }
 
@@ -68,6 +73,11 @@ public class MessageComposer {
     }
 
     // IOnlineGameManager
+
+    public void ping(int id, int index) {
+        String msg = name + sep + MessageParser.PING + sep + id + sep + index;
+        sendMsg(msg);
+    }
 
     public void poke(int id, int index) {
         String msg = name + sep + MessageParser.POKE + sep + id + sep + index;

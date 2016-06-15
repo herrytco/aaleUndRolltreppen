@@ -3,8 +3,6 @@ package at.aau.group1.leiterspiel;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -22,6 +20,7 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import at.aau.group1.leiterspiel.Game.BoardGenerator;
 import at.aau.group1.leiterspiel.Game.BotPlayer;
 import at.aau.group1.leiterspiel.Game.GameManager;
 import at.aau.group1.leiterspiel.Game.IGameUI;
@@ -51,7 +50,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     // online game settings
     public static boolean online;
     public static boolean clientInstance;
-    private int playerIndex; // index of the player playing on this app instance(on server always 0)
+    public static int playerIndex; // index of the player playing on this app instance(on server always 0)
     public static MessageComposer gameComposer;
     public static int msgID;
 
@@ -60,6 +59,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     private int canvasHeight = 512;
     private static int diceResult = 0;
     private static String status;
+    private static boolean clientDisconnected = false;
     private static boolean uiChanged = true;
     private static boolean uiEnabled = false;
 
@@ -171,6 +171,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         String[] playerNames = getIntent().getStringArrayExtra("PlayerNames");
         String[] playerTypes = getIntent().getStringArrayExtra("PlayerTypes");
         boolean cheatsEnabled = getIntent().getBooleanExtra("CheatPermission", false);
+        int turnSkips = getIntent().getIntExtra("TurnSkips", 1);
+        int boardType = getIntent().getIntExtra("BoardType", 0);
         clientInstance = getIntent().getBooleanExtra("ClientInstance", false);
         playerIndex = getIntent().getIntExtra("PlayerIndex", -1);
         online = getIntent().getBooleanExtra("Online", false);
@@ -191,16 +193,10 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         }
 
         // create a game board
-        gameManager.getGameBoard().setNumberOfFields(60);
-        gameManager.addLadder(new Ladder(Ladder.LadderType.UP, 13, 26));
-        gameManager.addLadder(new Ladder(Ladder.LadderType.DOWN, 5, 29));
-        gameManager.addLadder(new Ladder(Ladder.LadderType.DOWN, 23, 37));
-        gameManager.addLadder(new Ladder(Ladder.LadderType.UP, 39, 46));
-        gameManager.addLadder(new Ladder(Ladder.LadderType.DOWN, 34, 57));
-        // for a lesson on how not to do random-generated content, use this:
-//        gameManager.setGameBoard(new BoardGenerator(60, 8).generateBoard());
+        gameManager.setGameBoard(new BoardGenerator().generateBoard(boardType));
 
         gameManager.setCheatsEnabled(cheatsEnabled);
+        gameManager.setCheatTurns(turnSkips);
 
         // create players based on given parameters
         Player.resetIDs(); // start counting IDs with 0 again or else GameManager gets confused
@@ -371,6 +367,11 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
 
             statusView.setText(status);
 
+            if (clientDisconnected) {
+                clientDisconnected = false;
+                Toast.makeText(getApplicationContext(), getString(R.string.player_dc), Toast.LENGTH_SHORT).show();
+            }
+
             cheatButton.setEnabled(gameManager.areCheatsEnabled());
             cheatButton.setVisibility(gameManager.areCheatsEnabled()? View.VISIBLE : View.INVISIBLE);
 
@@ -476,6 +477,12 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     @Override
     public void skipTurn() {
         showStatus(getString(R.string.skip_turn));
+    }
+
+    @Override
+    public void notifyClientDisconnect() {
+        uiChanged = true;
+        clientDisconnected = true;
     }
 
     public void backToStartScreen(View view) {

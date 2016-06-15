@@ -4,10 +4,10 @@ import android.graphics.Point;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import at.aau.group1.leiterspiel.GameActivity;
-import at.aau.group1.leiterspiel.JoinActivity;
-import at.aau.group1.leiterspiel.LobbyActivity;
 import at.aau.group1.leiterspiel.Network.AckChecker;
 import at.aau.group1.leiterspiel.Network.IOnlineGameManager;
 
@@ -26,11 +26,21 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
     private boolean cheatsEnabled = false;
     private CheatAction cheat;
     private int cheaterID = -1;
+    private int maxTurnSkips = 1; // by default, a cheater has to skip 1 round
+    private int turnSkips = 0; // the number of turns the cheater still has to skip
     private boolean isMoving = false;
 
     private IGameUI ui;
 
     private AckChecker ackChecker = new AckChecker();
+    private final int WAIT_TIMEOUT = 5000;
+    private final int DC_TIMEOUT = 3000; // 3 seconds until a client is considered disconnected and thrown out
+    private Timer waitTimer;
+    private TimerTask waitTask;
+    private Timer dcTimer;
+    private int pingID = -1;
+    private boolean pingAcknowledged = false;
+    private ArrayList<Integer> disconnectedPlayers = new ArrayList<>();
 
     public GameManager(IGameUI ui) {
         this.ui = ui;
@@ -54,6 +64,8 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
     public void setCheatsEnabled(boolean b) { cheatsEnabled = b; }
 
     public boolean areCheatsEnabled() { return cheatsEnabled; }
+
+    public void setCheatTurns(int turns) { maxTurnSkips = turns; }
 
     /**
      * Pokes the currently selected player to signal him to make his turn.
@@ -137,6 +149,9 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
                 this.active = false;
             }
             isMoving = true;
+
+            if (waitTimer != null) waitTimer.cancel();
+            if (dcTimer != null) dcTimer.cancel();
         } else Log.d("Tag", "GameManager: playerID and activePlayer don't match("+playerID+"!="+activePlayer+").");
     }
 
@@ -156,13 +171,17 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
 
     private void switchToNextPlayer() {
         if (GameActivity.online && GameActivity.clientInstance) return; // let the server switch the players
-
         if (!active) return;
-        // switching to the next player
-        if (++activePlayer >= players.size()) activePlayer = 0;
+
+        // ignoring all disconnected players
+        do {
+            // switching to the next player
+            if (++activePlayer >= players.size()) activePlayer = 0;
+        } while (disconnectedPlayers.contains(activePlayer));
         if (activePlayer == cheaterID) { // make cheater skip one turn
             if (++activePlayer >= players.size()) activePlayer = 0;
-            cheaterID = -1;
+            turnSkips--;
+            if (turnSkips <=0) cheaterID = -1;
         }
         playerRolled = false;
         // reset cheat when it's the cheating player's turn again
@@ -173,6 +192,17 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
         if (GameActivity.online) {
             GameActivity.gameComposer.poke(GameActivity.msgID++, activePlayer);
             ackChecker.waitForAcknowledgement(GameActivity.msgID - 1);
+            // wait for the client to make a move
+            if (activePlayer != GameActivity.playerIndex) {
+                waitTimer = new Timer();
+                waitTask = new TimerTask() {
+                    @Override
+                    public void run() {
+                        checkConnection();
+                    }
+                };
+                waitTimer.schedule(waitTask, WAIT_TIMEOUT);
+            }
         }
 
         if (active) players.get(activePlayer).poke();
@@ -187,6 +217,7 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
         if (cheat != null) { // if someone cheated
             // mark cheater for the next round
             cheaterID = cheat.getPlayerID();
+            turnSkips = maxTurnSkips;
             // revert move
             gameBoard.revertMove(cheaterID, cheat.getSteps());
             // return cheater's name
@@ -252,18 +283,69 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
 
     public void setPlayerRolled(boolean b) { playerRolled = b; }
 
+    private void checkConnection() {
+        // ping the client/server
+        GameActivity.gameComposer.ping(GameActivity.msgID++, activePlayer);
+        pingID = GameActivity.msgID - 1;
+        dcTimer = new Timer();
+        dcTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                checkPingStatus();
+            }
+        }, DC_TIMEOUT);
+    }
+
+    private void checkPingStatus() {
+        if (pingAcknowledged) {
+            pingAcknowledged = false;
+            // start waiting again in case the connection is lost later
+            waitTimer = new Timer();
+            waitTask = new TimerTask() {
+                @Override
+                public void run() {
+                    checkConnection();
+                }
+            };
+            waitTimer.schedule(waitTask, WAIT_TIMEOUT);
+        } else {
+            // if client has not responded yet, ignore it and switch to the next player
+            disconnectedPlayers.add(activePlayer);
+            // check if there are any connected online players left
+            boolean stillOnline = false;
+            for (int i=0; i<players.size(); i++) {
+                if (players.get(i).isOnline() && !disconnectedPlayers.contains(i)) {
+                    stillOnline = true;
+                    break;
+                }
+            }
+            GameActivity.online = stillOnline;
+            ui.notifyClientDisconnect();
+            switchToNextPlayer();
+        }
+        pingID = -1;
+    }
+
     @Override
     public void ack(int id) {
         ackChecker.setLastAckID(id);
+        if (pingID == id) pingAcknowledged = true;
+    }
+
+    @Override
+    public void ping(int id, int index) {
+        if (index == GameActivity.playerIndex) GameActivity.gameComposer.ack(id);
     }
 
     @Override
     public void poke(int id, int index) {
-        if (activePlayer != index) playerRolled = false;
-        activePlayer = index;
-        updateUI();
-        players.get(activePlayer).poke();
-        GameActivity.gameComposer.ack(id);
+        if (GameActivity.clientInstance) {
+            if (activePlayer != index) playerRolled = false;
+            activePlayer = index;
+            updateUI();
+            players.get(activePlayer).poke();
+            GameActivity.gameComposer.ack(id);
+        }
     }
 
     @Override

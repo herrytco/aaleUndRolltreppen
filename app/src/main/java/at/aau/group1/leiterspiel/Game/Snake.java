@@ -1,9 +1,6 @@
 package at.aau.group1.leiterspiel.Game;
 
 import android.graphics.Point;
-import android.util.Log;
-
-import java.util.ArrayList;
 
 /**
  * Created by Igor on 02.05.2016.
@@ -58,8 +55,17 @@ public class Snake {
         return quadraticBezier(tStart, tMid, tEnd, pointsPerTwist, tPoint);
     }
 
-    // TODO maybe refactor/merge to universal bezier calculator
-    private Point linearBezier(Point start, Point end, int steps, int currentStep) {
+    /**
+     * Calculates a linear bezier "curve" and returns the position of the requested point on the
+     * curve.
+     *
+     * @param start Position of the curve's start point
+     * @param end Position of the curve's end point
+     * @param steps Number of points that are evenly distributed over the curve
+     * @param currentStep Index of the requested point
+     * @return Position of the requested point
+     */
+    public static Point linearBezier(Point start, Point end, int steps, int currentStep) {
         double stepSize = 1.0/steps;
         double t = currentStep * stepSize;
 
@@ -69,7 +75,7 @@ public class Snake {
         );
     }
 
-    private Point quadraticBezier(Point start, Point mid, Point end, int steps, int currentStep) {
+    public static Point quadraticBezier(Point start, Point mid, Point end, int steps, int currentStep) {
         double stepSize = 1.0/steps;
         double t = currentStep * stepSize;
 

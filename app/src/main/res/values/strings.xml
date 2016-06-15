@@ -3,6 +3,8 @@
     <string name="dice_button">Würfeln</string>
     <string name="game_finished">Spiel beendet</string>
     <string name="start_game">Spiel starten</string>
+    <string name="join_game">Spiel beitreten</string>
+    <string name="start">Start</string>
     <string name="local">Lokal</string>
     <string name="bot">Bot</string>
     <string name="online">Online</string>
@@ -14,10 +16,14 @@
     <string name="allow_cheats">Schummeln erlauben</string>
     <string name="somebody_cheated">hat geschummelt!</string>
     <string name="nobody">Niemand</string>
+    <string name="punishment">Bestrafung</string>
+    <string name="skip_cheater">aussetzen</string>
     <string name="loading">Lädt...</string>
     <string name="skip_turn">Zug nicht möglich</string>
     <string name="back_to_menu">Zurück zum Hauptmenü</string>
-    <string name="join_game">Spiel beitreten</string>
+    <string name="no_eels">Spielfeld: Keine Aale</string>
+    <string name="default_eels">Spielfeld: Normal</string>
+    <string name="many_eels">Spielfeld: Mehr Aale</string>
 
     <!-- Wi-fi online mode -->
     <string name="searching_games">Suche läuft...</string>
@@ -28,4 +34,6 @@
     <string name="timeout">Fehler bei Verbindung: Zeitablauf</string>
     <string name="waiting">Bitte warten...</string>
     <string name="service_visible">Spiel ist nun im Netzwerk sichtbar</string>
+    <string name="player_dc">Verbindung zu Spieler unterbrochen</string>
+    <string name="open_slot">Warte noch auf Spieler</string>
 </resources>

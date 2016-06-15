@@ -13,6 +13,8 @@ public interface IOnlineGameManager {
      */
     public void ack(int id);
 
+    public void ping(int id, int index);
+
     public void poke(int id, int index);
 
     public void skip(int id, String player);

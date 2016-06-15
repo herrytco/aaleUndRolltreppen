@@ -8,9 +8,9 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.os.AsyncTask;
-import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import at.aau.group1.leiterspiel.Game.GameBoard;
 import at.aau.group1.leiterspiel.Game.GameField;
@@ -146,13 +146,6 @@ public class GamePainter {
             double m = (double) canvasWidth / (double) canvasHeight;
             horizontalFields = (int) (minHorizontalFields * m) + 1; // +1 so some fields don't overlap each other(as often) in landscape mode
         } else horizontalFields = minHorizontalFields;
-        // experimental
-//        if (canvasHeight < canvasWidth) {
-//            int w = canvasWidth;
-//            canvasWidth = canvasHeight;
-//            xOffset = (w-canvasWidth)/2;
-//        }
-//        horizontalFields = minHorizontalFields;
 
         fieldRadius = (int) (canvasWidth*0.9 / horizontalFields / 3);
         int maxVerticalFields = (int) (canvasHeight*0.9 / (fieldRadius*3));
@@ -179,8 +172,8 @@ public class GamePainter {
 
                 // calculate the actual position of the field
                 Point pos;
-                if(!direction) pos = linearBezier(p0, p1, horizontalFields + 1, h);
-                else pos = linearBezier(p1, p0, horizontalFields + 1, h);
+                if(!direction) pos = Snake.linearBezier(p0, p1, horizontalFields + 1, h);
+                else pos = Snake.linearBezier(p1, p0, horizontalFields + 1, h);
 
                 storeField(pos, currentField, gameBoard);
 
@@ -189,17 +182,17 @@ public class GamePainter {
 
             // vertical part of the layer
             if(!direction) { // if the fields should be on the left or right edge of the canvas
-                p0 = new Point(linearBezier(p0, p1, horizontalFields +1, horizontalFields +1).x, yOffset + (n * layerHeight));
+                p0 = new Point(Snake.linearBezier(p0, p1, horizontalFields +1, horizontalFields +1).x, yOffset + (n * layerHeight));
                 p1 = new Point(p0.x, p0.y + layerHeight);
             } else {
-                p0 = new Point(linearBezier(p0, p1, horizontalFields +1, 0).x, yOffset + (n * layerHeight));
+                p0 = new Point(Snake.linearBezier(p0, p1, horizontalFields +1, 0).x, yOffset + (n * layerHeight));
                 p1 = new Point(p0.x, p0.y + layerHeight);
             }
             for (int v=0; v < verticalFields; v++) {
                 // end if all fields were calculated
                 if (currentField+1 > gameBoard.getNumberOfFields()) break;
 
-                Point pos = linearBezier(p0, p1, verticalFields - 1, v);
+                Point pos = Snake.linearBezier(p0, p1, verticalFields - 1, v);
 
                 storeField(pos, currentField, gameBoard);
 
@@ -212,26 +205,6 @@ public class GamePainter {
         boardBuilt = true;
         resizeResources();
 
-    }
-
-    /**
-     * Calculates a linear bezier "curve" and returns the position of the requested point on the
-     * curve.
-     *
-     * @param start Position of the curve's start point
-     * @param end Position of the curve's end point
-     * @param steps Number of points that are evenly distributed over the curve
-     * @param currentStep Index of the requested point
-     * @return Position of the requested point
-     */
-    private Point linearBezier(Point start, Point end, int steps, int currentStep) {
-        double stepSize = 1.0/steps;
-        double t = currentStep * stepSize;
-
-        return new Point(
-                (int)( (1-t)*start.x + t*end.x ),
-                (int)( (1-t)*start.y + t*end.y )
-        );
     }
 
     /**
@@ -373,13 +346,16 @@ public class GamePainter {
                 else ladderCanvas.drawBitmap(escalator, start.getPos().x - escalator.getWidth()/2, canvasHeight - (start.getPos().y + escalator.getHeight() - stepSize), ladderPaint);
 
             } else if (ladder.getType() == Ladder.LadderType.DOWN) { // Aaaaaaale
-                ladderPaint.setColor(Color.argb(255, 50, 128, 75));
+                Random random = new Random();
+                random.setSeed(System.currentTimeMillis());
+                int color = Color.argb(255, random.nextInt(30)+40, random.nextInt(40)+90, random.nextInt(30)+60); // ~ 255, 50, 128, 75
+                ladderPaint.setColor(color);
                 ladderPaint.setStyle(Paint.Style.FILL_AND_STROKE);
 
                 Point eelStart = new Point(end.getPos().x, end.getPos().y - (int) (fieldRadius * 1.1));
                 Point eelEnd = new Point(start.getPos().x, start.getPos().y + fieldRadius / 2);
                 int eelTwists = length / 100;
-                int eelSegments = length / 5;
+                int eelSegments = length / 4;
                 Snake eel = new Snake(eelStart, eelEnd, eelTwists);
                 for (int n = 0; n < eelSegments; n++) {
                     Point p = eel.getPoint(eelSegments, n);
@@ -417,22 +393,12 @@ public class GamePainter {
                 int midField = (gameBoard.getPreviousField()+piece.getField())/2; // selecting the field in the middle of the route as third point for the bezier curve
                 Point midPos = gameBoard.getFields()[midField].getPos();
 
-                imgPos = quadraticBezier( oldPos, midPos, imgPos, (int)(1.0/gameBoard.getTurnProgressIncrease()), (int)(gameBoard.getProgress()/gameBoard.getTurnProgressIncrease()) );
+                imgPos = Snake.quadraticBezier( oldPos, midPos, imgPos, (int)(1.0/gameBoard.getTurnProgressIncrease()), (int)(gameBoard.getProgress()/gameBoard.getTurnProgressIncrease()) );
             }
 
             if (scaledPieceImgs.size() > 0 && piece.getPlayerID() < scaledPieceImgs.size())
                 canvas.drawBitmap(scaledPieceImgs.get(piece.getPlayerID()), imgPos.x - fieldRadius + xOffset, canvasHeight - imgPos.y - fieldRadius - yOffset, paint);
         }
-    }
-
-    private Point quadraticBezier(Point start, Point mid, Point end, int steps, int currentStep) {
-        double stepSize = 1.0/steps;
-        double t = currentStep * stepSize;
-
-        return new Point(
-                (int) ( (start.x - 2*mid.x + end.x)*t*t + (-2*start.x + 2*mid.x)*t + start.x ),
-                (int) ( (start.y - 2*mid.y + end.y)*t*t + (-2*start.y + 2*mid.y)*t + start.y )
-        );
     }
 
     /**

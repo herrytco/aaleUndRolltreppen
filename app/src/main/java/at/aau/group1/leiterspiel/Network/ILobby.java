@@ -27,7 +27,9 @@ public interface ILobby {
 
     public void setPlayer(int id, int playerIndex, String playerType, String playerName);
 
-    public void allowCheats(int id, boolean permitCheats);
+    public void allowCheats(int id, boolean permitCheats, int turnSkips);
+
+    public void setBoardType(int id, int type);
 
     public void startGame(int id);
 

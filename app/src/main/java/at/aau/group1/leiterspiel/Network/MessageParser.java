@@ -18,10 +18,12 @@ public class MessageParser {
     public static final String ASSIGN_INDEX = "index";
     public static final String SET_PLAYER = "setplayer";
     public static final String ALLOW_CHEATS = "cheats";
+    public static final String SET_BOARD = "board";
     public static final String START_GAME = "start";
     public static final String YES = "y";
     public static final String NO = "n";
     // IOnlineGameManager-related commands
+    public static final String PING = "ping";
     public static final String POKE = "poke";
     public static final String SKIP = "skip";
     public static final String SET_DICE = "dice";
@@ -48,10 +50,20 @@ public class MessageParser {
         // remove all line breaks to prevent parsing errors
         msg = msg.replace("\n", "");
         // split the message into its parameters
-        String[] args = msg.split(SEPARATOR);
-        String name = args[0];
-        String command = args[1];
-        int id = Integer.parseInt(args[2]);
+        String[] args;
+        String name;
+        String command;
+        int id;
+        // catch exceptions in case an incomplete or incompatible message arrives
+        try {
+            args = msg.split(SEPARATOR);
+            name = args[0];
+            command = args[1];
+            id = Integer.parseInt(args[2]);
+        } catch (Exception e) {
+            Log.e(TAG, "PARSING ERROR - message ignored: "+msg);
+            return;
+        }
 
         if (lobby != null) { // commands can be skipped if no related listener exists
             try {
@@ -75,7 +87,12 @@ public class MessageParser {
                 if (command.equals(ALLOW_CHEATS)) {
                     boolean permitCheats = false;
                     if (args[3].equals(YES)) permitCheats = true;
-                    lobby.allowCheats(id, permitCheats);
+                    int turnSkips = Integer.parseInt(args[4]);
+                    lobby.allowCheats(id, permitCheats, turnSkips);
+                }
+                if (command.equals(SET_BOARD)) {
+                    int type = Integer.parseInt(args[3]);
+                    lobby.setBoardType(id, type);
                 }
                 if (command.equals(START_GAME)) {
                     lobby.startGame(id);
@@ -92,6 +109,10 @@ public class MessageParser {
             try {
                 if (command.equals(ACK)) {
                     gameManager.ack(id);
+                }
+                if (command.equals(PING)) {
+                    int index = Integer.parseInt(args[3]);
+                    gameManager.ping(id, index);
                 }
                 if (command.equals(POKE)) {
                     int index = Integer.parseInt(args[3]);

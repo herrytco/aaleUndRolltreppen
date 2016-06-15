@@ -41,7 +41,7 @@
                 android:id="@+id/startButton"
                 android:onClick="startLobby"
                 android:layout_gravity="center_vertical"
-                android:background="@color/blue"
+                android:background="@drawable/button"
                 android:textColor="#ffffff" />
 
             <Button
@@ -51,7 +51,7 @@
                 android:text="@string/join_game"
                 android:onClick="joinLobby"
                 android:layout_gravity="center_vertical"
-                android:background="@color/blue"
+                android:background="@drawable/button"
                 android:textColor="#ffffff" />
 
             <!-- There have been changes in : enabled, onclick due to Easter Egg :D -->
@@ -64,7 +64,7 @@
                 android:id="@+id/helpButton"
                 android:enabled="true"
                 android:layout_gravity="center_vertical"
-                android:background="@color/blue"
+                android:background="@drawable/button"
                 android:textColor="#bbbbbb" />
                 <!-- android:onClick="showHelp"
                 android:enabled="false"/-->
@@ -77,7 +77,7 @@
                 android:id="@+id/rulesButton"
                 android:enabled="false"
                 android:layout_gravity="center_vertical"
-                android:background="@color/blue"
+                android:background="@drawable/button"
                 android:textColor="#ffffff" />
 
         </LinearLayout>

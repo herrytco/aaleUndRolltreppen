@@ -8,53 +8,37 @@ import java.util.Random;
  */
 public class BoardGenerator {
 
-    private int numberOfFields = 60;
-    private int numberOfLadders = 8;
-    private Random random = new Random();
+    private final int FIELDS = 60;
 
     public BoardGenerator() {
 
     }
 
-    public BoardGenerator(int numberOfFields, int numberOfLadders) {
-        this.numberOfFields = numberOfFields;
-        this.numberOfLadders = numberOfLadders;
-        if (this.numberOfLadders % 2 != 0) this.numberOfLadders++; // make sure the number is always even
-
-    }
-
-    public GameBoard generateBoard() {
-        random.setSeed(System.currentTimeMillis());
+    public GameBoard generateBoard(int type) {
         GameBoard gameBoard = new GameBoard();
-        gameBoard.setNumberOfFields(numberOfFields);
+        gameBoard.setNumberOfFields(FIELDS);
 
-        ArrayList<Integer> usedFields = new ArrayList<Integer>();
-        int field = 0;
-        int increase = numberOfFields/(numberOfLadders+2);
-        boolean direction = true;
-        for (int n = 0; n<numberOfLadders; n++) {
-            field += increase;
-            field += getDeviation(increase);
-            if (field >= numberOfFields-1) break;
-            while (usedFields.contains(field)) {
-                field++;
-            }
-            if (direction) gameBoard.addLadder(new Ladder(Ladder.LadderType.DOWN, field, getEndField(field)));
-            else gameBoard.addLadder(new Ladder(Ladder.LadderType.UP, field, getEndField(field)));
-            direction = !direction;
+        if (type == 0) {
+            gameBoard.addLadder(new Ladder(Ladder.LadderType.UP, 13, 26));
+            gameBoard.addLadder(new Ladder(Ladder.LadderType.UP, 39, 46));
+            gameBoard.addLadder(new Ladder(Ladder.LadderType.DOWN, 5, 29));
+            gameBoard.addLadder(new Ladder(Ladder.LadderType.DOWN, 23, 37));
+            gameBoard.addLadder(new Ladder(Ladder.LadderType.DOWN, 34, 57));
+        }
+        if (type == 1) {
+            gameBoard.addLadder(new Ladder(Ladder.LadderType.UP, 13, 26));
+            gameBoard.addLadder(new Ladder(Ladder.LadderType.UP, 34, 50));
+            gameBoard.addLadder(new Ladder(Ladder.LadderType.DOWN, 1, 24));
+            gameBoard.addLadder(new Ladder(Ladder.LadderType.DOWN, 28, 47));
+            gameBoard.addLadder(new Ladder(Ladder.LadderType.DOWN, 32, 55));
+            gameBoard.addLadder(new Ladder(Ladder.LadderType.DOWN, 21, 40));
+            gameBoard.addLadder(new Ladder(Ladder.LadderType.DOWN, 7, 15));
+        }
+        if (type == 2) {
+            gameBoard.addLadder(new Ladder(Ladder.LadderType.UP, 5, 24));
+            gameBoard.addLadder(new Ladder(Ladder.LadderType.DOWN, 28, 47));
         }
 
         return gameBoard;
-    }
-
-    private int getDeviation(int maxDeviation) {
-        return random.nextInt(maxDeviation*2)-maxDeviation;
-    }
-
-    private int getEndField(int start) {
-        int result = 15+getDeviation(2);
-        if (result < 0) result = 1;
-        if (result >= numberOfFields) result = numberOfFields-2;
-        return result;
     }
 }

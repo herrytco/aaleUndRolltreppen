@@ -14,27 +14,29 @@
     <EditText
         android:layout_width="match_parent"
         android:layout_height="40dp"
-        android:layout_margin="5dp"
+        android:layout_marginBottom="10dp"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="@string/default_name"
         android:id="@+id/clientNameView"
         android:gravity="center"
         android:background="@color/white"
         android:textColor="#000000"
-        android:alpha="0.7"/>
+        android:textCursorDrawable="@null"
+        android:alpha="0.7"
+        android:inputType="textPersonName"
+        android:maxLength="12"
+        android:hint="@string/default_name" />
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="5dp"
         android:padding="10dp"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="30dp"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="@string/search_games"
         android:gravity="center"
         android:id="@+id/searchButton"
         android:onClick="initDiscovery"
-        android:background="@color/darkblue"
+        android:background="@drawable/button"
         android:textColor="#ffffff"
         android:focusable="true" />
 
