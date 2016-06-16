@@ -1,4 +1,4 @@
-package at.aau.group1.leiterspiel.Game;
+package at.aau.group1.leiterspiel.game;
 
 import android.view.View;
 
@@ -16,6 +16,7 @@ public interface IGameUI {
     public void enableUI();
 
     public void showStatus(String status);
+    public void showPlayer(int index);
     public void endGame(Player winner);
     public void skipTurn();
     public void notifyClientDisconnect();
@@ -23,6 +24,6 @@ public interface IGameUI {
     // online
 
     public void setDice(int result);
-    public void checkForCheat();
+    public boolean checkForCheat();
 
 }

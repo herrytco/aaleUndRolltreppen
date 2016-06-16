@@ -1,4 +1,4 @@
-package at.aau.group1.leiterspiel.Game;
+package at.aau.group1.leiterspiel.game;
 
 import android.graphics.Point;
 import android.util.Log;
@@ -12,21 +12,21 @@ import java.util.Arrays;
 public class GameBoard {
 
     private int numberOfFields;
-    private ArrayList<Ladder> ladders = new ArrayList<Ladder>();
-    private ArrayList<Piece> pieces = new ArrayList<Piece>();
+    private ArrayList<Ladder> ladders = new ArrayList<>();
+    private ArrayList<Piece> pieces = new ArrayList<>();
 
     // for graphics later on
     private GameField[] fields;
     // speed of the movement animation, >=1.0 means instant movement
     private double turnProgressIncrease = 1.0;
-    private final int TURN_DURATION_MS = 100; // time needed per field to complete the move
+    private static final int TURN_DURATION_MS = 100; // time needed per field to complete the move
     private int fps = 30;
     private Piece movingPiece;
     private boolean isMoving = false;
     private int previousField = 0;
 
     public GameBoard() {
-
+        // default constructor
     }
 
     public GameBoard(int numberOfFields, ArrayList<Ladder> ladders, ArrayList<Piece> pieces) {
@@ -90,35 +90,32 @@ public class GameBoard {
         boolean gameEnded = false;
         boolean ladderUsed = false;
 
-        Piece currentPiece = null;
-        for (Piece p: pieces) {
-            if (p.getPlayerID() == playerID) {
-                currentPiece = p;
-                previousField = p.getField();
-                break;
-            }
-        }
-        if(currentPiece == null) throw new IllegalArgumentException("invalid playerID");
+        Piece currentPiece = getPieceOfPlayer(playerID);
+        if(currentPiece == null)
+            throw new IllegalArgumentException("invalid playerID");
+
+        previousField = currentPiece.getField();
         int currentField = currentPiece.getField();
 
         // checks if the goal will be reached
         if (currentField + fields == numberOfFields-1) {
-            currentField += fields;
+//            currentField += fields;
             gameEnded = true;
             Log.d("GameBoard", "Game ended. Winner is player "+playerID);
         } else if (currentField + fields >= numberOfFields) {
             // do nothing in case the goal would be overshot
             return false;
-        } else {
-            currentField += fields;
-            // check ladders
-            for (Ladder ladder: ladders) {
-                if (ladder.checkFields(currentField)) {
-                    int temp = currentField;
-                    currentField = ladder.checkActivation(currentField);
-                    if (temp != currentField) ladderUsed = true;
-                    break;
-                }
+//        } else {
+        }
+        currentField += fields;
+        // check ladders
+        for (Ladder ladder: ladders) {
+            if (ladder.checkFields(currentField)) {
+                int temp = currentField;
+                currentField = ladder.checkActivation(currentField);
+                if (temp != currentField)
+                    ladderUsed = true;
+                break;
             }
         }
         // move piece to currentField
@@ -144,7 +141,8 @@ public class GameBoard {
 
         int div = fieldDistance / stepDistance;
         double duration = TURN_DURATION_MS * Math.max(div, 3); // 3 fields distance as minimum so the animation doesn't appear too fast over short distances
-        if (ladder) duration *= 1.5;
+        if (ladder)
+            duration *= 1.5;
         double ratio = 1000.0/duration;
         return 1.0/(fps/ratio);
     }
@@ -196,7 +194,8 @@ public class GameBoard {
      */
     public Piece getPieceOfPlayer(int playerID) {
         for (Piece piece:pieces) {
-            if (piece.getPlayerID() == playerID) return piece;
+            if (piece.getPlayerID() == playerID)
+                return piece;
         }
         return null;
     }
@@ -208,11 +207,12 @@ public class GameBoard {
      * @return List of all pieces on this field, can be empty
      */
     public ArrayList<Piece> getPiecesOnField(int field) {
-        ArrayList<Piece> pieces = new ArrayList<Piece>();
-        for (Piece piece: pieces) {
-            if (field == piece.getField()) pieces.add(piece);
+        ArrayList<Piece> piecesOnField = new ArrayList<>();
+        for (Piece piece: piecesOnField) {
+            if (field == piece.getField())
+                piecesOnField.add(piece);
         }
-        return pieces;
+        return piecesOnField;
     }
 
     /**
@@ -223,7 +223,8 @@ public class GameBoard {
      */
     public Ladder getLadderOnField(int field) {
         for (Ladder ladder: ladders) {
-            if (field == ladder.getStartField() || field == ladder.getEndField()) return ladder;
+            if (field == ladder.getStartField() || field == ladder.getEndField())
+                return ladder;
         }
         return null;
     }
@@ -267,7 +268,8 @@ public class GameBoard {
     }
 
     public double getProgress() {
-        if (movingPiece!=null) return movingPiece.getTurnProgress();
+        if (movingPiece!=null)
+            return movingPiece.getTurnProgress();
         return 1.0;
     }
 

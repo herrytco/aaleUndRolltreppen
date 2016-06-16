@@ -1,4 +1,4 @@
-package at.aau.group1.leiterspiel.Network;
+package at.aau.group1.leiterspiel.network;
 
 import android.util.Log;
 
@@ -7,7 +7,7 @@ import android.util.Log;
  */
 public class MessageParser {
 
-    private final String TAG = "MessageParser";
+    private static final String TAG = "MessageParser";
 
     // command syntax: <name of sender>:<command>:<ID>[:<additional parameters>]
     // valid commands in messages
@@ -47,6 +47,7 @@ public class MessageParser {
     }
 
     public void parseMessage(String msg) {
+//        Log.d(TAG, "Parsing message: "+msg);
         // remove all line breaks to prevent parsing errors
         msg = msg.replace("\n", "");
         // split the message into its parameters

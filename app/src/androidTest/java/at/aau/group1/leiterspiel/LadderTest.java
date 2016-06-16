@@ -3,7 +3,7 @@ package at.aau.group1.leiterspiel;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 
-import at.aau.group1.leiterspiel.Game.Ladder;
+import at.aau.group1.leiterspiel.game.Ladder;
 
 public class LadderTest {
 

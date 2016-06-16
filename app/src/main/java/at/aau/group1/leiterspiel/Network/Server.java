@@ -1,20 +1,15 @@
-package at.aau.group1.leiterspiel.Network;
+package at.aau.group1.leiterspiel.network;
 
-import android.net.nsd.NsdServiceInfo;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 
 /**
@@ -22,9 +17,9 @@ import java.net.SocketTimeoutException;
  */
 public class Server {
 
-    private final String TAG = "Server";
+    private static final String TAG = "Server";
 
-    private final int BLOCK_TIMEOUT = 50;
+    private static final int BLOCK_TIMEOUT = 50;
     private CommunicationTask communicator;
     private Socket socket;
     private ServerSocket serverSocket;
@@ -66,21 +61,8 @@ public class Server {
     }
 
     public void disconnect() {
-        if (socket != null) stop = true;
-    }
-
-    private void closeConnection() {
-        try {
-            in.close();
-            out.flush();
-            out.close();
-            socket.close();
-            socket = null;
-            in = null;
-            out = null;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        if (socket != null)
+            stop = true;
     }
 
     public String getInput() {
@@ -113,29 +95,11 @@ public class Server {
                 // set timeout for the read() method, otherwise the thread would be blocked until it receives something over the InputStream
                 socket.setSoTimeout(BLOCK_TIMEOUT);
 
-                byte buffer[] = new byte[1024];
-                int readBytes = 0;
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
 
                 while (!stop) {
                     // reading input
-                    try {
-                        readBytes = in.read(buffer);
-                        if (readBytes != -1) {
-                            sb.append(new String(buffer, 0, readBytes));
-                            if (parser != null) {
-                                Log.d(TAG, "parsing message: "+sb.toString());
-                                // let the parser consume and process the message
-                                parser.parseMessage(sb.toString());
-                                sb = new StringBuilder();
-                            } else {
-                                // notify the listener that input was received
-                                if (listener != null) listener.inputReceived();
-                            }
-                        }
-                    } catch(SocketTimeoutException e) {
-                        // do literally nothing and continue
-                    }
+                    readInput(in);
 
                     // writing output
                     if (write && output != null) {
@@ -152,6 +116,44 @@ public class Server {
             closeConnection();
 
             return null;
+        }
+
+        private void readInput(InputStream in) {
+            byte[] buffer = new byte[1024];
+            int readBytes;
+            try {
+                readBytes = in.read(buffer);
+                if (readBytes != -1) {
+                    sb.append(new String(buffer, 0, readBytes));
+                    if (parser != null) {
+                        Log.d(TAG, "parsing message: "+sb.toString());
+                        // let the parser consume and process the message
+                        parser.parseMessage(sb.toString());
+                        sb = new StringBuilder();
+                    } else {
+                        // notify the listener that input was received
+                        if (listener != null) listener.inputReceived();
+                    }
+                }
+            } catch(SocketTimeoutException e) {
+                // do literally nothing and continue
+            } catch(IOException ioe) {
+                ioe.printStackTrace();
+            }
+        }
+
+        private void closeConnection() {
+            try {
+                in.close();
+                out.flush();
+                out.close();
+                socket.close();
+                socket = null;
+                in = null;
+                out = null;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 

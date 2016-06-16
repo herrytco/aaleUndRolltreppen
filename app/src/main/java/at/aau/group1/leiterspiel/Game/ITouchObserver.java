@@ -1,4 +1,4 @@
-package at.aau.group1.leiterspiel.Game;
+package at.aau.group1.leiterspiel.game;
 
 import android.graphics.Point;
 

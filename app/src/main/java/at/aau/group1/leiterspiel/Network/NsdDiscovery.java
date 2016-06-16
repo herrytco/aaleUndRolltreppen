@@ -1,4 +1,4 @@
-package at.aau.group1.leiterspiel.Network;
+package at.aau.group1.leiterspiel.network;
 
 import android.content.Context;
 import android.net.nsd.NsdManager;
@@ -33,14 +33,6 @@ public class NsdDiscovery {
         iNsdObserver = observer;
     }
 
-    public ArrayList<NsdServiceInfo> getDiscoveredServices() {
-        return discoveredServices;
-    }
-
-    public void resetDiscoveredServices() {
-        discoveredServices.clear();
-    }
-
     public void startDiscovery() {
         initResolveListener();
         initializeDiscoveryListener();
@@ -59,7 +51,7 @@ public class NsdDiscovery {
         resolveListener = new NsdManager.ResolveListener() {
             @Override
             public void onResolveFailed(NsdServiceInfo serviceInfo, int errorCode) {
-                // error code 3 means: "Indicates that the operation failed because it is already active."
+                // error code 3: "Indicates that the operation failed because it is already active."
                 Log.d(TAG, "Resolve failed: "+errorCode);
             }
 
@@ -84,15 +76,10 @@ public class NsdDiscovery {
 
             @Override
             public void onServiceFound(NsdServiceInfo service) {
-                // A service was found!  Do something with it.
                 Log.d(TAG, "Service discovery success: " + service);
                 if (!service.getServiceType().equals(NsdService.SERVICE_TYPE)) {
-                    // Service type is the string containing the protocol and
-                    // transport layer for this service.
                     Log.d(TAG, "Unknown Service Type: " + service.getServiceType());
                 } else if (service.getServiceName().equals(NsdService.SERVICE_NAME+clientName)) {
-                    // The name of the service tells the user what they'd be
-                    // connecting to. It could be "Bob's Chat App".
                     Log.d(TAG, "Same machine: " + NsdService.SERVICE_NAME+clientName);
                 } else if (service.getServiceName().contains(NsdService.SERVICE_NAME)){
                     nsdManager.resolveService(service, resolveListener);
@@ -101,8 +88,6 @@ public class NsdDiscovery {
 
             @Override
             public void onServiceLost(NsdServiceInfo service) {
-                // When the network service is no longer available.
-                // Internal bookkeeping code goes here.
                 Log.e(TAG, "service lost: " + service);
             }
 

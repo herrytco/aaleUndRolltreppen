@@ -1,4 +1,4 @@
-package at.aau.group1.leiterspiel.Game;
+package at.aau.group1.leiterspiel.game;
 
 import android.graphics.Point;
 import android.util.Log;
@@ -8,8 +8,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import at.aau.group1.leiterspiel.GameActivity;
-import at.aau.group1.leiterspiel.Network.AckChecker;
-import at.aau.group1.leiterspiel.Network.IOnlineGameManager;
+import at.aau.group1.leiterspiel.network.AckChecker;
+import at.aau.group1.leiterspiel.network.IOnlineGameManager;
 
 /**
  * Created by Igor on 18.04.2016.
@@ -33,8 +33,8 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
     private IGameUI ui;
 
     private AckChecker ackChecker = new AckChecker();
-    private final int WAIT_TIMEOUT = 5000;
-    private final int DC_TIMEOUT = 3000; // 3 seconds until a client is considered disconnected and thrown out
+    private static final int WAIT_TIMEOUT = 5000;
+    private static final int DC_TIMEOUT = 3000; // 3 seconds until a client is considered disconnected and thrown out
     private Timer waitTimer;
     private TimerTask waitTask;
     private Timer dcTimer;
@@ -82,9 +82,10 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
      * Tells the UI to change according to the type of the current player.
      */
     private void updateUI() {
-        Log.d("Debug", "updateUI for player "+activePlayer+" - touchInput: "+players.get(activePlayer).expectsTouchInput());
-        if (players.get(activePlayer).expectsTouchInput()) ui.enableUI();
-        else ui.disableUI();
+        if (players.get(activePlayer).expectsTouchInput())
+            ui.enableUI();
+        else
+            ui.disableUI();
 
         ui.showStatus(players.get(activePlayer).getName());
     }
@@ -101,8 +102,6 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
     }
 
     public GameBoard getGameBoard() { return gameBoard; }
-
-    public void addLadder(Ladder ladder) { gameBoard.addLadder(ladder); }
 
     public void setGameBoard(GameBoard gameBoard) {
         this.gameBoard = gameBoard;
@@ -126,42 +125,64 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
      * @param playerID ID of the calling player
      * @param steps value rolled by the dice
      */
-    private void move(int playerID, int steps) {
+    private boolean move(int playerID, int steps) {
         // check if the player has already rolled the dice, otherwise the player can't move yet
         if (!playerRolled) {
             Log.d("Tag", "Player "+activePlayer+" didn't roll yet.");
-            return;
+            return false;
         }
         // check move validity so the player can't go back or more than 6 fields forward
-        if (steps <=0 || steps > 6) return;
+        if (steps <=0 || steps > 6)
+            return false;
         // check if the move is valid considering cheat setting
-        if (!cheatsEnabled && steps != latestDiceResult) return;
+        if (!cheatsEnabled && steps != latestDiceResult)
+            return false;
+        // check if the player who wants to make the move is active
+        if (playerID != activePlayer)
+            return false;
+        // check if this is a cheating move
+        if (cheatsEnabled && steps != latestDiceResult) {
+            // make sure cheats can't be used for the last winning move
+            if (gameBoard.checkWinningMove(playerID, steps))
+                return false;
+            cheat = new CheatAction(playerID, steps);
+        }
 
-        if (playerID == activePlayer) {
-            if (cheatsEnabled && steps != latestDiceResult) {
-                cheat = new CheatAction(playerID, steps);
-                // make sure cheats can't be used for the last winning move
-                if (gameBoard.checkWinningMove(playerID, steps)) return;
-            }
+        // finally make the move
+        if (executeMove(playerID, steps)) { // if game has ended
+            ui.endGame(players.get(activePlayer));
+            this.active = false;
+        }
+        isMoving = true;
 
-            if (executeMove(playerID, steps)) { // if game has ended
-                ui.endGame(players.get(activePlayer));
-                this.active = false;
-            }
-            isMoving = true;
-
-            if (waitTimer != null) waitTimer.cancel();
-            if (dcTimer != null) dcTimer.cancel();
-        } else Log.d("Tag", "GameManager: playerID and activePlayer don't match("+playerID+"!="+activePlayer+").");
+        if (waitTimer != null)
+            waitTimer.cancel();
+        if (dcTimer != null)
+            dcTimer.cancel();
+        return true;
     }
 
+    /**
+     * Calls the move() method, and additionally notifies all connected app instances if the move
+     * happened on this device.
+     *
+     * @param playerID ID of the calling player
+     * @param steps value rolled by the dice
+     * @param localMove if the move happened by the player controlling this device
+     */
     @Override
     public void move(int playerID, int steps, boolean localMove) {
-        move(playerID, steps);
+        if (!move(playerID, steps))
+            return;
 
-        if (localMove) GameActivity.gameComposer.movePiece(GameActivity.msgID++, steps);
+        if (localMove)
+            GameActivity.gameComposer.movePiece(GameActivity.msgID++, steps);
     }
 
+    /**
+     * Checks whether the current player has finished the move animation, and if the animation is
+     * complete, switch to the next player.
+     */
     public void checkProgress() {
         if (isMoving && !gameBoard.isMoving()) {
             isMoving = false;
@@ -169,43 +190,64 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
         }
     }
 
+    /**
+     * After a player completes their turn, switch to the next one and poke them.
+     * If this is a client instance, the method does nothing, as the server controls which player's
+     * turn it is(works more reliable to keep the client in sync).
+     */
     private void switchToNextPlayer() {
-        if (GameActivity.online && GameActivity.clientInstance) return; // let the server switch the players
-        if (!active) return;
+        if (GameActivity.online && GameActivity.clientInstance)
+            return; // let the server switch the players
+        if (!active)
+            return;
 
         // ignoring all disconnected players
         do {
             // switching to the next player
-            if (++activePlayer >= players.size()) activePlayer = 0;
+            if (++activePlayer >= players.size())
+                activePlayer = 0;
         } while (disconnectedPlayers.contains(activePlayer));
-        if (activePlayer == cheaterID) { // make cheater skip one turn
-            if (++activePlayer >= players.size()) activePlayer = 0;
-            turnSkips--;
-            if (turnSkips <=0) cheaterID = -1;
-        }
-        playerRolled = false;
-        // reset cheat when it's the cheating player's turn again
-        if (cheat != null && cheat.getPlayerID() == activePlayer) cheat = null;
+
+        updateCheat();
 
         updateUI();
+        ui.showPlayer(activePlayer);
 
         if (GameActivity.online) {
             GameActivity.gameComposer.poke(GameActivity.msgID++, activePlayer);
             ackChecker.waitForAcknowledgement(GameActivity.msgID - 1);
             // wait for the client to make a move
-            if (activePlayer != GameActivity.playerIndex) {
-                waitTimer = new Timer();
-                waitTask = new TimerTask() {
-                    @Override
-                    public void run() {
-                        checkConnection();
-                    }
-                };
-                waitTimer.schedule(waitTask, WAIT_TIMEOUT);
-            }
+            if (activePlayer != GameActivity.playerIndex)
+                schedulePing();
         }
 
-        if (active) players.get(activePlayer).poke();
+        if (active)
+            players.get(activePlayer).poke();
+    }
+
+    private void updateCheat() {
+        if (activePlayer == cheaterID) {
+            if (++activePlayer >= players.size())
+                activePlayer = 0;
+            turnSkips--;
+            if (turnSkips == 0)
+                cheaterID = -1;
+        }
+        playerRolled = false;
+        // reset cheat when it's the cheating player's turn again
+        if (cheat != null && cheat.getPlayerID() == activePlayer && cheaterID == -1)
+            cheat = null;
+    }
+
+    private void schedulePing() {
+        waitTimer = new Timer();
+        waitTask = new TimerTask() {
+            @Override
+            public void run() {
+                checkConnection();
+            }
+        };
+        waitTimer.schedule(waitTask, WAIT_TIMEOUT);
     }
 
     /**
@@ -214,15 +256,22 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
      * @return name of the cheater, or null if nobody cheated
      */
     public String checkForCheat() {
+        if (GameActivity.clientInstance && GameActivity.online) {
+            GameActivity.gameComposer.checkForCheat(GameActivity.msgID++);
+            if (!ackChecker.waitForAcknowledgement(GameActivity.msgID-1))
+                return null;
+        }
+
         if (cheat != null) { // if someone cheated
-            // mark cheater for the next round
+            // mark cheater for the next rounds
             cheaterID = cheat.getPlayerID();
             turnSkips = maxTurnSkips;
             // revert move
             gameBoard.revertMove(cheaterID, cheat.getSteps());
             // return cheater's name
             for (Player player: players) {
-                if (player.getPlayerID() == cheaterID) return player.getName();
+                if (player.getPlayerID() == cheaterID)
+                    return player.getName();
             }
         }
         return null;
@@ -253,7 +302,8 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
         int field = dice;
         if(piece != null) {
             field += piece.getField();
-            if (field < gameBoard.getNumberOfFields()) getGameBoard().getFields()[field].setHighlighted(true);
+            if (field < gameBoard.getNumberOfFields())
+                getGameBoard().getFields()[field].setHighlighted(true);
             else ui.skipTurn();
         }
     }
@@ -283,6 +333,10 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
 
     public void setPlayerRolled(boolean b) { playerRolled = b; }
 
+    /**
+     * Check if the connection is still alive by sending a ping and waiting for a response for
+     * DC_TIMEOUT milliseconds.
+     */
     private void checkConnection() {
         // ping the client/server
         GameActivity.gameComposer.ping(GameActivity.msgID++, activePlayer);
@@ -296,18 +350,14 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
         }, DC_TIMEOUT);
     }
 
+    /**
+     * React to the result of a ping, depending on whether a response arrived.
+     */
     private void checkPingStatus() {
         if (pingAcknowledged) {
             pingAcknowledged = false;
             // start waiting again in case the connection is lost later
-            waitTimer = new Timer();
-            waitTask = new TimerTask() {
-                @Override
-                public void run() {
-                    checkConnection();
-                }
-            };
-            waitTimer.schedule(waitTask, WAIT_TIMEOUT);
+            schedulePing();
         } else {
             // if client has not responded yet, ignore it and switch to the next player
             disconnectedPlayers.add(activePlayer);
@@ -329,20 +379,25 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
     @Override
     public void ack(int id) {
         ackChecker.setLastAckID(id);
-        if (pingID == id) pingAcknowledged = true;
+        if (pingID == id)
+            pingAcknowledged = true;
     }
 
     @Override
     public void ping(int id, int index) {
-        if (index == GameActivity.playerIndex) GameActivity.gameComposer.ack(id);
+        if (index == GameActivity.playerIndex)
+            GameActivity.gameComposer.ack(id);
     }
 
     @Override
     public void poke(int id, int index) {
         if (GameActivity.clientInstance) {
-            if (activePlayer != index) playerRolled = false;
+            if (activePlayer != index)
+                playerRolled = false;
+
             activePlayer = index;
             updateUI();
+            ui.showPlayer(activePlayer);
             players.get(activePlayer).poke();
             GameActivity.gameComposer.ack(id);
         }
@@ -354,21 +409,22 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
             if (players.get(activePlayer).getName().equals(player)) {
                 switchToNextPlayer();
             }
+            GameActivity.gameComposer.ack(id);
         }
-        GameActivity.gameComposer.ack(id);
     }
 
     @Override
     public void setDice(int id, int dice) {
         this.ui.setDice(dice);
-        if (GameActivity.clientInstance) players.get(activePlayer).setDiceResult(dice);
+        if (GameActivity.clientInstance)
+            players.get(activePlayer).setDiceResult(dice);
         GameActivity.gameComposer.ack(id);
     }
 
     @Override
     public void checkForCheat(int id) {
-        this.ui.checkForCheat();
-        GameActivity.gameComposer.ack(id);
+        if (!GameActivity.clientInstance && this.ui.checkForCheat())
+            GameActivity.gameComposer.ack(id);
     }
 
     @Override

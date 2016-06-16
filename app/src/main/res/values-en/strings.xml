@@ -21,7 +21,7 @@
     <string name="loading">Loading...</string>
     <string name="skip_turn">Move not possible</string>
     <string name="back_to_menu">Back to main menu</string>
-    <string name="no_eels">Board: No eels</string>
+    <string name="no_eels">Board: Fewer eels</string>
     <string name="default_eels">Board: Normal</string>
     <string name="many_eels">Board: More eels</string>
 

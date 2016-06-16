@@ -1,4 +1,4 @@
-package at.aau.group1.leiterspiel.Network;
+package at.aau.group1.leiterspiel.network;
 
 import android.net.nsd.NsdServiceInfo;
 

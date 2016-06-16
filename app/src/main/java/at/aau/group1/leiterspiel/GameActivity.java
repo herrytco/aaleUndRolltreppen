@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -20,15 +22,14 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import at.aau.group1.leiterspiel.Game.BoardGenerator;
-import at.aau.group1.leiterspiel.Game.BotPlayer;
-import at.aau.group1.leiterspiel.Game.GameManager;
-import at.aau.group1.leiterspiel.Game.IGameUI;
-import at.aau.group1.leiterspiel.Game.Ladder;
-import at.aau.group1.leiterspiel.Game.LocalPlayer;
-import at.aau.group1.leiterspiel.Game.OnlinePlayer;
-import at.aau.group1.leiterspiel.Game.Player;
-import at.aau.group1.leiterspiel.Network.MessageComposer;
+import at.aau.group1.leiterspiel.game.BoardGenerator;
+import at.aau.group1.leiterspiel.game.BotPlayer;
+import at.aau.group1.leiterspiel.game.GameManager;
+import at.aau.group1.leiterspiel.game.IGameUI;
+import at.aau.group1.leiterspiel.game.LocalPlayer;
+import at.aau.group1.leiterspiel.game.OnlinePlayer;
+import at.aau.group1.leiterspiel.game.Player;
+import at.aau.group1.leiterspiel.network.MessageComposer;
 
 public class GameActivity extends AppCompatActivity implements IGameUI {
 
@@ -36,13 +37,12 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     // generally 30-50fps is probably the best range for fluid animations.
     // if the setting is too high, everything starts to lag, but below that threshold higher fps
     // mean smoother animations.
-    private final int FPS = 50;
+    private static final int FPS = 50;
     private Timer graphicsTimer;
     private TimerTask drawTask;
     private boolean graphicsActive = false;
     // framerate measurement
-    private final boolean LOG_FPS = false;
-    private long frametime = 0; // time needed to draw a frame and update the UI in ms
+    private static final boolean LOG_FPS = false;
     private int measuredFPS = 0;
     private int frameCount = 0;
     private long startTime = 0;
@@ -59,6 +59,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     private int canvasHeight = 512;
     private static int diceResult = 0;
     private static String status;
+    private static int activePlayer;
     private static boolean clientDisconnected = false;
     private static boolean uiChanged = true;
     private static boolean uiEnabled = false;
@@ -70,6 +71,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     private Button cheatButton;
     private LinearLayout loadingScreen;
     private LinearLayout uiContainer;
+    private ImageView playerView;
     private boolean uiAlignedToBottom = false;
     private LinearLayout endScreen;
     private ImageView winnerPictureView;
@@ -89,9 +91,6 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
             R.drawable.plankton,
             R.drawable.sandy };
 
-    //Fullscreen
-    private Fullscreen fs = new Fullscreen();
-
     // static values to make them persistent over GameActivity lifecycles
     private static GameManager gameManager;
     private static SoundManager soundManager;
@@ -104,6 +103,19 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
 
     private Random random = new Random();
 
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        setContentView(R.layout.activity_game);
+    }
+
     private void initUI() {
         gameCanvas = (LinearLayout) findViewById(R.id.gameCanvas);
         diceButton = (ImageButton) findViewById(R.id.diceButton);
@@ -114,6 +126,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         endScreen = (LinearLayout) findViewById(R.id.endPopup);
         winnerPictureView = (ImageView) findViewById(R.id.winnerView);
         winnerNameView = (TextView) findViewById(R.id.winnerName);
+        playerView = (ImageView) findViewById(R.id.activePlayerView);
 
         random.setSeed(System.currentTimeMillis());
 
@@ -131,38 +144,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
             }
         });
 
-        // touch listener for uiContainer dragging
-        uiContainer.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) uiContainer.getLayoutParams();
-                    if (uiContainer.getHeight() < uiContainer.getWidth()) { // portrait mode
-                        if (!uiAlignedToBottom) params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-                        else params.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-                    } else { // landscape mode
-                        if (!uiAlignedToBottom) params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-                        else params.removeRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-                    }
-                    uiContainer.setLayoutParams(params);
-                    uiAlignedToBottom = !uiAlignedToBottom;
-                }
-
-                return false;
-            }
-
-        });
-
         uiInitialized = true;
-    }
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_game);
-
-        fs.setDecorView(getWindow().getDecorView());
-        fs.hideSystemUI();
     }
 
     private void initGame() {
@@ -188,8 +170,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
                 BitmapFactory.decodeResource(getResources(), R.drawable.field_high));
         gamePainter.setLadderFieldImg(BitmapFactory.decodeResource(getResources(), R.drawable.field_up),
                 BitmapFactory.decodeResource(getResources(), R.drawable.field_down));
-        for (int i=0; i<playerIcons.length; i++) {
-            gamePainter.addPieceImg(BitmapFactory.decodeResource(getResources(), playerIcons[i]));
+        for (int playerIcon : playerIcons) {
+            gamePainter.addPieceImg(BitmapFactory.decodeResource(getResources(), playerIcon));
         }
 
         // create a game board
@@ -199,20 +181,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         gameManager.setCheatTurns(turnSkips);
 
         // create players based on given parameters
-        Player.resetIDs(); // start counting IDs with 0 again or else GameManager gets confused
-        for (int n=0; n<LobbyActivity.MAX_PLAYERS; n++) {
-            if (playerSelection[n]) {
-                Player player = null;
-                Log.d("Tag", "PlayerType: "+playerTypes[n]);
-                if (playerTypes[n].equals(LobbyActivity.BOT))
-                    player = new BotPlayer(gameManager);
-                if (playerTypes[n].equals(LobbyActivity.LOCAL))
-                    player = new LocalPlayer(playerNames[n], gameManager);
-                if (playerTypes[n].equals(LobbyActivity.ONLINE))
-                    player = new OnlinePlayer(playerNames[n], gameManager);
-                gameManager.addPlayer(player);
-            }
-        }
+        createPlayers(playerSelection, playerTypes, playerNames);
 
         // get current composer for further use, and register the GameManager as message receiver
         if (clientInstance && JoinActivity.composer != null) {
@@ -222,7 +191,6 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         }
         else if (!clientInstance && LobbyActivity.composer != null) {
             gameComposer = LobbyActivity.composer;
-            this.msgID = LobbyActivity.msgID;
             LobbyActivity.server.registerOnlineGameManager(gameManager);
         }
         else {
@@ -231,6 +199,22 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         }
 
         gameInitialized = true;
+    }
+
+    private void createPlayers(boolean[] playerSelection, String[] playerTypes, String[] playerNames) {
+        Player.resetIDs(); // start counting IDs with 0 again or else GameManager gets confused
+        for (int n=0; n<LobbyActivity.MAX_PLAYERS; n++) {
+            if (playerSelection[n]) {
+                Player player = null;
+                if (playerTypes[n].equals(LobbyActivity.BOT))
+                    player = new BotPlayer(gameManager);
+                if (playerTypes[n].equals(LobbyActivity.LOCAL))
+                    player = new LocalPlayer(playerNames[n], gameManager);
+                if (playerTypes[n].equals(LobbyActivity.ONLINE))
+                    player = new OnlinePlayer(playerNames[n], gameManager);
+                gameManager.addPlayer(player);
+            }
+        }
     }
 
     /**
@@ -243,10 +227,17 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         uiChanged = true;
         uiEnabled = false;
         status = null;
-        if (loadingScreen!=null) loadingScreen.setVisibility(View.VISIBLE);
+        if (loadingScreen!=null)
+            loadingScreen.setVisibility(View.VISIBLE);
+        winner = null;
         gameManager = null;
         gamePainter = null;
         soundManager = null;
+        // end network communication
+        if (LobbyActivity.server != null)
+            LobbyActivity.server.disconnect();
+        if (JoinActivity.client != null)
+            JoinActivity.client.disconnect();
     }
 
     @Override
@@ -254,7 +245,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         super.onWindowFocusChanged(hasFocus);
 
         if (hasFocus) {
-            if (!gameInitialized) initGame();
+            if (!gameInitialized)
+                initGame();
             initUI();
         }
 
@@ -274,16 +266,14 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     protected void onStop() {
         super.onStop();
 
-        if (gameManager!=null) gameManager.pauseGame();
+        if (gameManager!=null)
+            gameManager.pauseGame();
 
-        if (drawTask!=null) drawTask.cancel(); // stop graphics output
-        if (graphicsTimer!=null) graphicsTimer.cancel();
+        if (drawTask!=null)
+            drawTask.cancel(); // stop graphics output
+        if (graphicsTimer!=null)
+            graphicsTimer.cancel();
         graphicsActive = false;
-
-        // unregister service in the network
-        if (!clientInstance) {
-            if (LobbyActivity.server != null) LobbyActivity.server.disconnect();
-        }
     }
 
     @Override
@@ -291,7 +281,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         if (System.currentTimeMillis() - lastBackPress > 3000) { // create warning
             Toast.makeText(getApplicationContext(), getResources().getString(R.string.press_back_again), Toast.LENGTH_LONG).show();
             lastBackPress = System.currentTimeMillis();
-        } else { // kill game session and go back to lobby
+        } else { // kill game session and go back to lobby if back is pressed twice in a row
             resetGame();
             super.onBackPressed(); // exit activity
         }
@@ -310,12 +300,13 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            if (gameInitialized && uiInitialized) drawGame();
+                            if (gameInitialized && uiInitialized)
+                                drawGame();
                         }
                     });
                 }
             };
-            graphicsTimer.scheduleAtFixedRate(drawTask, 0, 1000 / FPS); // start graphics output
+            graphicsTimer.scheduleAtFixedRate(drawTask, 0, 1000 / (long)FPS); // start graphics output
             graphicsActive = true;
         }
     }
@@ -326,7 +317,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
      */
     private void drawGame() {
         long start = System.currentTimeMillis();
-        if (startTime == 0) startTime = start;
+        if (startTime == 0)
+            startTime = start;
 
         if (gamePainter.getFinished()) { // as soon as the frame is drawn, slap it onto the gameCanvas, or wait a bit longer
             gameCanvas.setBackground(new BitmapDrawable(gamePainter.getFrame()));
@@ -335,18 +327,20 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         // update parts of the user interface based on the game's state
         // this is only done a few times per second to help minimize the impact on the framerate,
         // as it can sometimes cause huge random delay spikes(25-90ms):
-        if (frameCount % 10 == 0) updateUI();
+        if (frameCount % 5 == 0)
+            updateUI();
         gameManager.checkProgress(); // make the GameManager check if a player's turn was finished
 
         long end = System.currentTimeMillis();
-        frametime = end - start;
+        long frametime = end - start;
         frameCount++;
         if (end - startTime >= 1000) {
             int oldFPS = measuredFPS;
             measuredFPS = frameCount;
             frameCount = 0;
             startTime = 0;
-            if (oldFPS != measuredFPS && LOG_FPS) Log.d("FPS", measuredFPS+"fps, last frametime: "+frametime+"ms");
+            if (oldFPS != measuredFPS && LOG_FPS)
+                Log.d("FPS", measuredFPS+"fps, last frametime: "+ frametime +"ms");
         }
     }
 
@@ -357,39 +351,49 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
      */
     private void updateUI() {
         if (uiChanged) {
-            for (int i=0; i<diceFaces.length; i++) {
-                // getDrawable(int) is already deprecated, but the newer alternative requires a higher API level...
-                if (diceResult == i+1) diceButton.setBackground(getResources().getDrawable(diceFaces[i]));
-            }
-            diceButton.setEnabled(uiEnabled);
-            if (uiEnabled) diceButton.setAlpha(1f);
-            else diceButton.setAlpha(0.5f);
+            updateDice();
 
             statusView.setText(status);
+
+            playerView.setImageResource(playerIcons[activePlayer]);
 
             if (clientDisconnected) {
                 clientDisconnected = false;
                 Toast.makeText(getApplicationContext(), getString(R.string.player_dc), Toast.LENGTH_SHORT).show();
             }
 
-            cheatButton.setEnabled(gameManager.areCheatsEnabled());
-            cheatButton.setVisibility(gameManager.areCheatsEnabled()? View.VISIBLE : View.INVISIBLE);
-
-            if (winner != null && endScreen != null) {
-                winnerNameView.setText(winner.getName());
-                if (winner.getPlayerID() < playerIcons.length)
-                    winnerPictureView.setBackground(getResources().getDrawable( playerIcons[winner.getPlayerID()] ));
-                endScreen.setVisibility(View.VISIBLE);
-            } else if (endScreen != null)
-                endScreen.setVisibility(View.INVISIBLE);
-
-            if (gameInitialized && uiInitialized && loadingScreen!=null) {
-                loadingScreen.setVisibility(View.INVISIBLE);
-            } else if(loadingScreen!=null) {
-                loadingScreen.setVisibility(View.VISIBLE);
-            }
+            updateVisibility();
 
             uiChanged = false;
+        }
+    }
+
+    private void updateDice() {
+        if (diceResult > 0)
+            diceButton.setBackground(getResources().getDrawable(diceFaces[diceResult-1]));
+        diceButton.setEnabled(uiEnabled);
+        if (uiEnabled)
+            diceButton.setAlpha(1f);
+        else diceButton.setAlpha(0.5f);
+    }
+
+    private void updateVisibility() {
+        cheatButton.setEnabled(gameManager.areCheatsEnabled());
+        cheatButton.setVisibility(gameManager.areCheatsEnabled()? View.VISIBLE : View.INVISIBLE);
+
+        if (winner != null && endScreen != null) {
+            winnerNameView.setText(winner.getName());
+            if (winner.getPlayerID() < playerIcons.length)
+                winnerPictureView.setBackground(getResources().getDrawable( playerIcons[winner.getPlayerID()] ));
+            endScreen.setVisibility(View.VISIBLE);
+            uiContainer.setVisibility(View.INVISIBLE);
+        } else if (endScreen != null)
+            endScreen.setVisibility(View.INVISIBLE);
+
+        if (gameInitialized && uiInitialized && loadingScreen!=null) {
+            loadingScreen.setVisibility(View.INVISIBLE);
+        } else if(loadingScreen!=null) {
+            loadingScreen.setVisibility(View.VISIBLE);
         }
     }
 
@@ -410,7 +414,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     }
 
     public void setDice(int result) {
-        soundManager.playDiceSound();
+        soundManager.playSound("dice");
         diceResult = result;
         uiChanged = true;
 
@@ -420,19 +424,21 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     }
 
     @Override
-    public void checkForCheat() {
+    public boolean checkForCheat() {
         String name = gameManager.checkForCheat();
-        if (name == null)
-            showStatus(getString(R.string.nobody)+" "+getString(R.string.somebody_cheated));
-        else
-            showStatus(name+" "+getString(R.string.somebody_cheated));
         uiChanged = true;
+        if (name == null) {
+            showStatus(getString(R.string.nobody)+" "+getString(R.string.somebody_cheated));
+            return false;
+        } else {
+            showStatus(name+" "+getString(R.string.somebody_cheated));
+            soundManager.playSound("fail");
+            return true;
+        }
     }
 
     public void checkForCheat(View view) {
         checkForCheat();
-
-        gameComposer.checkForCheat(msgID++);
     }
 
     /**
@@ -440,7 +446,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
      */
     @Override
     public void disableUI() {
-        if (uiEnabled) uiChanged = true;
+        if (uiEnabled)
+            uiChanged = true;
         uiEnabled = false;
     }
 
@@ -449,7 +456,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
      */
     @Override
     public void enableUI() {
-        if (!uiEnabled) uiChanged = true;
+        if (!uiEnabled)
+            uiChanged = true;
         uiEnabled = true;
     }
 
@@ -464,13 +472,19 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         this.status = status;
     }
 
+    @Override
+    public void showPlayer(int index) {
+        uiChanged = true;
+        activePlayer = index;
+    }
+
     /**
      * Calls showStatus() with the game_finished string.
      */
     @Override
     public void endGame(Player winner) {
+        uiChanged = true;
         this.disableUI();
-        this.showStatus(getResources().getString(R.string.game_finished));
         this.winner = winner;
     }
 
@@ -487,7 +501,22 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
 
     public void backToStartScreen(View view) {
         resetGame();
-        finish(); // end the activity
+        finish();
+    }
+
+    public void toggleUI(View view) {
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) uiContainer.getLayoutParams();
+        if (uiContainer.getHeight() < uiContainer.getWidth()) { // portrait mode
+            if (!uiAlignedToBottom)
+                params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+            else params.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        } else { // landscape mode
+            if (!uiAlignedToBottom)
+                params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            else params.removeRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        }
+        uiContainer.setLayoutParams(params);
+        uiAlignedToBottom = !uiAlignedToBottom;
     }
 
 }

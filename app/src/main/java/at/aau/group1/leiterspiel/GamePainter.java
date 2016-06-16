@@ -12,19 +12,22 @@ import android.os.AsyncTask;
 import java.util.ArrayList;
 import java.util.Random;
 
-import at.aau.group1.leiterspiel.Game.GameBoard;
-import at.aau.group1.leiterspiel.Game.GameField;
-import at.aau.group1.leiterspiel.Game.Ladder;
-import at.aau.group1.leiterspiel.Game.Piece;
-import at.aau.group1.leiterspiel.Game.Snake;
+import at.aau.group1.leiterspiel.game.GameBoard;
+import at.aau.group1.leiterspiel.game.GameField;
+import at.aau.group1.leiterspiel.game.Ladder;
+import at.aau.group1.leiterspiel.game.Piece;
+import at.aau.group1.leiterspiel.game.Snake;
 
 /**
  * Created by Igor on 02.05.2016.
+ *
+ * Used for calculating and creating the graphical representation of the GameBoard.
  */
 public class GamePainter {
 
     private boolean boardBuilt = false;
-    private int canvasWidth, canvasHeight;
+    private int canvasWidth;
+    private int canvasHeight;
     private Bitmap bmp;
     private Canvas canvas;
     private PaintTask paintTask;
@@ -41,14 +44,14 @@ public class GamePainter {
     private Bitmap scaledFieldUpImg;
     private Bitmap fieldDownImg;
     private Bitmap scaledFieldDownImg;
-    private ArrayList<Bitmap> pieceImgs = new ArrayList<Bitmap>();
-    private ArrayList<Bitmap> scaledPieceImgs = new ArrayList<Bitmap>();
+    private ArrayList<Bitmap> pieceImgs = new ArrayList<>();
+    private ArrayList<Bitmap> scaledPieceImgs = new ArrayList<>();
     private Bitmap boardImg;
 
     // style of the GameBoard
-    private final double PIECE_SIZE_FACTOR = 2.1;
-    private final int MIN_VERTICAL_FIELDS = 3; // only 2 vertical fields look damn ugly
-    private int minHorizontalFields = 8; // sets how many fields should be aligned horizontally, in portrait mode. Landscape mode scales this number proportionally.
+    private static final double PIECE_SIZE_FACTOR = 2.1;
+    private static final int MIN_VERTICAL_FIELDS = 3; // only 2 vertical fields look damn ugly
+    private static final int MIN_HORIZONTAL_FIELDS = 8; // sets how many fields should be aligned horizontally, in portrait mode. Landscape mode scales this number proportionally.
     private int fieldRadius = 0;
     private boolean sizeInitialized = false;
     private int horizontalFields; // number of fields in the horizontal lines
@@ -115,7 +118,8 @@ public class GamePainter {
      * This method only gets called whenever the canvas dimensions change.
      */
     private void resizeResources() {
-        if (!boardBuilt) return;
+        if (!boardBuilt)
+            return;
 
         if (escImg!=null)
             scaledEscImg = Bitmap.createScaledBitmap(escImg, fieldRadius*2, fieldRadius*2/3, false);
@@ -142,37 +146,40 @@ public class GamePainter {
      */
     public void buildBoard(GameBoard gameBoard) {
 
-        if (canvasHeight < canvasWidth) { // if the device is in landscape mode, align more fields horizontally
+        if (canvasHeight < canvasWidth) { // if the device is in landscape mode, align more fields horizontally to make better use of the screen
             double m = (double) canvasWidth / (double) canvasHeight;
-            horizontalFields = (int) (minHorizontalFields * m) + 1; // +1 so some fields don't overlap each other(as often) in landscape mode
-        } else horizontalFields = minHorizontalFields;
+            horizontalFields = (int) (MIN_HORIZONTAL_FIELDS * m) + 1; // + 1 so vertical fields don't overlap each other(as often?) in landscape mode
+        } else horizontalFields = MIN_HORIZONTAL_FIELDS;
 
         fieldRadius = (int) (canvasWidth*0.9 / horizontalFields / 3);
         int maxVerticalFields = (int) (canvasHeight*0.9 / (fieldRadius*3));
         int remainingFields = gameBoard.getNumberOfFields() - maxVerticalFields;
-        int layers = (int) Math.ceil(remainingFields / horizontalFields);
-        verticalFields = (int) Math.max((gameBoard.getNumberOfFields() - layers * horizontalFields) /
+        int layers = remainingFields / horizontalFields;
+        verticalFields = Math.max((gameBoard.getNumberOfFields() - layers * horizontalFields) /
                 layers, MIN_VERTICAL_FIELDS);
 
-        // 1 layer = 1 horizontal line + 1 vertical line
+        // 1 layer = 1 horizontal line + 1 vertical line of fields
         int layerWidth = (int) (canvasWidth * 0.85);
         int layerHeight = (int) (canvasHeight * 0.9) / layers;
-        int yOffset = (canvasHeight - layers*layerHeight)/2;
+        int yHalfOffset = (canvasHeight - layers*layerHeight)/2;
 
         int currentField = 0;
         boolean direction = false; // true = left, false = right
         for (int n=0; n<layers; n++) {
-            Point p0, p1;
+            Point p0;
+            Point p1;
             // calculate horizontal line of fields
-            p0 = new Point((canvasWidth - layerWidth)/2, yOffset + (n * layerHeight)); // left-most point
+            p0 = new Point((canvasWidth - layerWidth)/2, yHalfOffset + (n * layerHeight)); // left-most point
             p1 = new Point(p0.x + layerWidth, p0.y); // right-most point
             for (int h=1; h<= horizontalFields; h++) {
                 // end if all fields were calculated
-                if (currentField+1 > gameBoard.getNumberOfFields()) break;
+                if (currentField+1 > gameBoard.getNumberOfFields())
+                    break;
 
                 // calculate the actual position of the field
                 Point pos;
-                if(!direction) pos = Snake.linearBezier(p0, p1, horizontalFields + 1, h);
+                if(!direction)
+                    pos = Snake.linearBezier(p0, p1, horizontalFields + 1, h);
                 else pos = Snake.linearBezier(p1, p0, horizontalFields + 1, h);
 
                 storeField(pos, currentField, gameBoard);
@@ -182,15 +189,16 @@ public class GamePainter {
 
             // vertical part of the layer
             if(!direction) { // if the fields should be on the left or right edge of the canvas
-                p0 = new Point(Snake.linearBezier(p0, p1, horizontalFields +1, horizontalFields +1).x, yOffset + (n * layerHeight));
+                p0 = new Point(Snake.linearBezier(p0, p1, horizontalFields +1, horizontalFields +1).x, yHalfOffset + (n * layerHeight));
                 p1 = new Point(p0.x, p0.y + layerHeight);
             } else {
-                p0 = new Point(Snake.linearBezier(p0, p1, horizontalFields +1, 0).x, yOffset + (n * layerHeight));
+                p0 = new Point(Snake.linearBezier(p0, p1, horizontalFields +1, 0).x, yHalfOffset + (n * layerHeight));
                 p1 = new Point(p0.x, p0.y + layerHeight);
             }
             for (int v=0; v < verticalFields; v++) {
                 // end if all fields were calculated
-                if (currentField+1 > gameBoard.getNumberOfFields()) break;
+                if (currentField+1 > gameBoard.getNumberOfFields())
+                    break;
 
                 Point pos = Snake.linearBezier(p0, p1, verticalFields - 1, v);
 
@@ -231,40 +239,11 @@ public class GamePainter {
     }
 
     /**
-     * clears the canvas by drawing a white filled rectangle over everything.
+     * Draws the static part of the GameBoard which doesn't need to be recreated every frame, but
+     * only after the canvas dimensions changed(upon game start and rotating the device).
+     *
+     * @param gameBoard current state of the GameBoard
      */
-    private void clearCanvas() {
-        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-    }
-
-    /**
-     * Draws the game board(fields, ladders) on the canvas using the coordinates stored in
-     * gameBoard.
-     */
-    private void drawBoard(GameBoard gameBoard) {
-        if (!boardBuilt) return;
-        if (!sizeInitialized) resizeResources();
-
-        Paint paint = new Paint();
-
-        if (boardImg!=null) {
-            canvas.drawBitmap(boardImg, xOffset, yOffset, paint);
-
-            GameField[] fields = gameBoard.getFields();
-            if (fieldImg != null) {
-                for (GameField field: fields) {
-                    if (field.isHighlighted()){
-                        canvas.drawBitmap(scaledFieldHighlightImg, field.getPos().x - fieldRadius + xOffset, canvasHeight - field.getPos().y - fieldRadius - yOffset, paint);
-                        break; // assuming there's never more than one highlighted field
-                    }
-                }
-            }
-        } else {
-            initDrawBoard(gameBoard);
-        }
-
-    }
-
     private void initDrawBoard(GameBoard gameBoard) {
         GameField[] fields = gameBoard.getFields();
         Paint paint = new Paint();
@@ -275,44 +254,43 @@ public class GamePainter {
         initDrawLadders(gameBoard);
 
         // draw the fields
-        if (fieldImg != null) { // if a field image exists then use it, or fall back to ugly graphics
+        if (fieldImg != null) {
             for (GameField field: fields) {
-                if (!field.isHighlighted()) boardCanvas.drawBitmap(scaledFieldImg, field.getPos().x - fieldRadius, canvasHeight - field.getPos().y - fieldRadius, paint);
+                if (!field.isHighlighted())
+                    boardCanvas.drawBitmap(scaledFieldImg, field.getPos().x - fieldRadius, canvasHeight - field.getPos().y - fieldRadius, paint);
                 else boardCanvas.drawBitmap(scaledFieldHighlightImg, field.getPos().x - fieldRadius, canvasHeight - field.getPos().y - fieldRadius, paint);
             }
         }
 
         // draw the highlighted ladder fields
-        int index = 0;
+        if (fieldUpImg == null)
+            return;
         for (Ladder ladder : gameBoard.getLadders()) {
             GameField start = gameBoard.getFields()[ladder.getStartField()];
             GameField end = gameBoard.getFields()[ladder.getEndField()];
 
-            if (fieldUpImg != null) {
-
-                if (ladder.getType() == Ladder.LadderType.UP) {
-                    if (!start.isHighlighted())
-                        boardCanvas.drawBitmap(scaledFieldUpImg, start.getPos().x - fieldRadius, canvasHeight - start.getPos().y - fieldRadius, paint);
-                    if (!end.isHighlighted())
-                        boardCanvas.drawBitmap(scaledFieldUpImg, end.getPos().x - fieldRadius, canvasHeight - end.getPos().y - fieldRadius, paint);
-                } else if (ladder.getType() == Ladder.LadderType.DOWN) {
-                    if (!start.isHighlighted())
-                        boardCanvas.drawBitmap(scaledFieldDownImg, start.getPos().x - fieldRadius, canvasHeight - start.getPos().y - fieldRadius, paint);
-                    if (!end.isHighlighted())
-                        boardCanvas.drawBitmap(scaledFieldDownImg, end.getPos().x - fieldRadius, canvasHeight - end.getPos().y - fieldRadius, paint);
-                }
+            if (ladder.getType() == Ladder.LadderType.UP) {
+                boardCanvas.drawBitmap(scaledFieldUpImg, start.getPos().x - fieldRadius, canvasHeight - start.getPos().y - fieldRadius, paint);
+                boardCanvas.drawBitmap(scaledFieldUpImg, end.getPos().x - fieldRadius, canvasHeight - end.getPos().y - fieldRadius, paint);
+            } else if (ladder.getType() == Ladder.LadderType.DOWN) {
+                boardCanvas.drawBitmap(scaledFieldDownImg, start.getPos().x - fieldRadius, canvasHeight - start.getPos().y - fieldRadius, paint);
+                boardCanvas.drawBitmap(scaledFieldDownImg, end.getPos().x - fieldRadius, canvasHeight - end.getPos().y - fieldRadius, paint);
             }
-            index++;
         }
 
     }
 
+    /**
+     * Draws the ladders(aka escalators and eels). Like the board itself it's static and is slow,
+     * so only gets called when necessary.
+     *
+     * @param gameBoard current state of the GameBoard
+     */
     private void initDrawLadders(GameBoard gameBoard) {
         Paint ladderPaint = new Paint();
 
         Canvas ladderCanvas = new Canvas(boardImg);
 
-        int index = 0;
         for (Ladder ladder: gameBoard.getLadders()) {
 
             GameField start = gameBoard.getFields()[ladder.getStartField()];
@@ -342,7 +320,8 @@ public class GamePainter {
                 // draw the escalator onto the gameboard
                 escalator = Bitmap.createBitmap(escalator, 0, 0, escalator.getWidth(), escalator.getHeight(), matrix, false);
                 // if-else is experimental, hopefully it (more or less) corrects the x coordinate for all cases
-                if (Math.toDegrees(-escAngle)+90 < 0) ladderCanvas.drawBitmap(escalator, start.getPos().x - escalator.getWidth(), canvasHeight - (start.getPos().y + escalator.getHeight() - stepSize), ladderPaint);
+                if (Math.toDegrees(-escAngle)+90 < 0)
+                    ladderCanvas.drawBitmap(escalator, start.getPos().x - escalator.getWidth(), canvasHeight - (start.getPos().y + escalator.getHeight() - stepSize), ladderPaint);
                 else ladderCanvas.drawBitmap(escalator, start.getPos().x - escalator.getWidth()/2, canvasHeight - (start.getPos().y + escalator.getHeight() - stepSize), ladderPaint);
 
             } else if (ladder.getType() == Ladder.LadderType.DOWN) { // Aaaaaaale
@@ -365,39 +344,6 @@ public class GamePainter {
                 ladderPaint.setColor(Color.WHITE);
                 ladderCanvas.drawCircle(eelStart.x, canvasHeight - eelStart.y + 10, 3, ladderPaint);
             }
-            index++;
-        }
-    }
-
-    /**
-     * Draws the player's pieces on the canvas.
-     */
-    private void drawPieces(GameBoard gameBoard) {
-        if (!boardBuilt) return;
-        if (!sizeInitialized) resizeResources();
-
-        int pieceSize = (int) (fieldRadius * PIECE_SIZE_FACTOR);
-        Paint paint = new Paint();
-
-        // draw the stuff
-        for (Piece piece:gameBoard.getPieces()) {
-            // position of the piece being drawn
-            Point imgPos = gameBoard.getFields()[piece.getField()].getPos();
-            imgPos = shufflePiecePosition(imgPos, piece, piece.getField(), pieceSize); // in case multiple pieces are on a single field, change their position a bit to keep them all visible
-
-            if (gameBoard.isMoving() && piece.getPlayerID() == gameBoard.getMovingPiece().getPlayerID()) { // if this piece is currently moving, calculate the movement
-                gameBoard.updateProgress();
-                double progress = gameBoard.getProgress();
-                Point oldPos = gameBoard.getFields()[gameBoard.getPreviousField()].getPos(); // position of the field the piece moves from
-                oldPos = shufflePiecePosition(oldPos, piece, gameBoard.getPreviousField(), pieceSize);
-                int midField = (gameBoard.getPreviousField()+piece.getField())/2; // selecting the field in the middle of the route as third point for the bezier curve
-                Point midPos = gameBoard.getFields()[midField].getPos();
-
-                imgPos = Snake.quadraticBezier( oldPos, midPos, imgPos, (int)(1.0/gameBoard.getTurnProgressIncrease()), (int)(gameBoard.getProgress()/gameBoard.getTurnProgressIncrease()) );
-            }
-
-            if (scaledPieceImgs.size() > 0 && piece.getPlayerID() < scaledPieceImgs.size())
-                canvas.drawBitmap(scaledPieceImgs.get(piece.getPlayerID()), imgPos.x - fieldRadius + xOffset, canvasHeight - imgPos.y - fieldRadius - yOffset, paint);
         }
     }
 
@@ -430,11 +376,19 @@ public class GamePainter {
         return p;
     }
 
+    /**
+     * Starts the creation/drawing of a new frame based on the GameBoard data
+     * @param gameBoard the state of the game that should be drawn
+     */
     public void drawFrame(GameBoard gameBoard) {
         frameFinished = false;
         paintTask.doInBackground(gameBoard);
     }
 
+    /**
+     * Tells the caller if the frame has already been drawn completely by the PaintTask
+     * @return frameFinished
+     */
     public boolean getFinished() { return frameFinished; }
 
     /**
@@ -447,12 +401,75 @@ public class GamePainter {
         protected Void doInBackground(GameBoard... params) {
             GameBoard gameBoard = params[0];
 
-            clearCanvas(); // clear previous frame
+            canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR); // clear previous frame
             drawBoard(gameBoard); // draw the board on the canvas
             drawPieces(gameBoard); // draw the players on the canvas
             frameFinished = true;
 
             return null;
+        }
+
+        /**
+         * Draws the game board(fields, ladders) on the canvas using the coordinates stored in
+         * gameBoard.
+         */
+        private void drawBoard(GameBoard gameBoard) {
+            if (!boardBuilt)
+                return;
+            if (!sizeInitialized)
+                resizeResources();
+
+            Paint paint = new Paint();
+
+            if (boardImg == null)
+                initDrawBoard(gameBoard);
+
+            canvas.drawBitmap(boardImg, xOffset, yOffset, paint); // after initDrawBoard() was called once, the same Bitmap gets redrawn again
+
+            GameField[] fields = gameBoard.getFields();
+            if (fieldImg == null)
+                return;
+
+            for (GameField field: fields) {
+                if (field.isHighlighted()) {
+                    canvas.drawBitmap(scaledFieldHighlightImg, field.getPos().x - fieldRadius + xOffset, canvasHeight - field.getPos().y - fieldRadius - yOffset, paint);
+                    break; // assuming there's never more than one highlighted field
+                }
+            }
+
+        }
+
+        /**
+         * Draws the player's pieces on the canvas.
+         */
+        private void drawPieces(GameBoard gameBoard) {
+            if (!boardBuilt)
+                return;
+            if (!sizeInitialized)
+                resizeResources();
+
+            int pieceSize = (int) (fieldRadius * PIECE_SIZE_FACTOR);
+            Paint paint = new Paint();
+
+            // draw the stuff
+            for (Piece piece:gameBoard.getPieces()) {
+                // position of the piece being drawn
+                Point imgPos = gameBoard.getFields()[piece.getField()].getPos();
+                imgPos = shufflePiecePosition(imgPos, piece, piece.getField(), pieceSize); // in case multiple pieces are on a single field, change their position a bit to keep them all visible
+
+                if (gameBoard.isMoving() && piece.getPlayerID() == gameBoard.getMovingPiece().getPlayerID()) { // if this piece is currently moving, calculate the movement
+                    gameBoard.updateProgress();
+                    Point oldPos = gameBoard.getFields()[gameBoard.getPreviousField()].getPos(); // position of the field the piece moves from
+                    oldPos = shufflePiecePosition(oldPos, piece, gameBoard.getPreviousField(), pieceSize);
+                    int midField = (gameBoard.getPreviousField()+piece.getField())/2; // selecting the field in the middle of the route as third point for the bezier curve
+                    Point midPos = gameBoard.getFields()[midField].getPos();
+
+                    imgPos = Snake.quadraticBezier( oldPos, midPos, imgPos, (int)(1.0/gameBoard.getTurnProgressIncrease()), (int)(gameBoard.getProgress()/gameBoard.getTurnProgressIncrease()) );
+                }
+
+                if (!scaledPieceImgs.isEmpty() && piece.getPlayerID() < scaledPieceImgs.size())
+                    canvas.drawBitmap(scaledPieceImgs.get(piece.getPlayerID()), imgPos.x - fieldRadius + xOffset, canvasHeight - imgPos.y - fieldRadius - yOffset, paint);
+            }
         }
     }
 

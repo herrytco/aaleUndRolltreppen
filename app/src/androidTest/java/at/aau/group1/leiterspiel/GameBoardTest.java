@@ -5,9 +5,9 @@ import static org.junit.Assert.assertTrue;
 
 import android.graphics.Point;
 
-import at.aau.group1.leiterspiel.Game.GameBoard;
-import at.aau.group1.leiterspiel.Game.Ladder;
-import at.aau.group1.leiterspiel.Game.Piece;
+import at.aau.group1.leiterspiel.game.GameBoard;
+import at.aau.group1.leiterspiel.game.Ladder;
+import at.aau.group1.leiterspiel.game.Piece;
 
 public class GameBoardTest {
 

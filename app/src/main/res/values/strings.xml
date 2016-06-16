@@ -21,7 +21,7 @@
     <string name="loading">Lädt...</string>
     <string name="skip_turn">Zug nicht möglich</string>
     <string name="back_to_menu">Zurück zum Hauptmenü</string>
-    <string name="no_eels">Spielfeld: Keine Aale</string>
+    <string name="no_eels">Spielfeld: Weniger Aale</string>
     <string name="default_eels">Spielfeld: Normal</string>
     <string name="many_eels">Spielfeld: Mehr Aale</string>
 

@@ -2,10 +2,10 @@ package at.aau.group1.leiterspiel;
 
 import org.junit.Test;
 
-import at.aau.group1.leiterspiel.Game.BotPlayer;
-import at.aau.group1.leiterspiel.Game.IPlayerObserver;
-import at.aau.group1.leiterspiel.Game.LocalPlayer;
-import at.aau.group1.leiterspiel.Game.Player;
+import at.aau.group1.leiterspiel.game.BotPlayer;
+import at.aau.group1.leiterspiel.game.IPlayerObserver;
+import at.aau.group1.leiterspiel.game.LocalPlayer;
+import at.aau.group1.leiterspiel.game.Player;
 
 import static org.junit.Assert.assertTrue;
 

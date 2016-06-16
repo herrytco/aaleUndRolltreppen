@@ -1,12 +1,13 @@
 package at.aau.group1.leiterspiel;
 
 import android.content.Intent;
-import android.content.res.ColorStateList;
 import android.net.nsd.NsdServiceInfo;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -16,17 +17,17 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
 
-import at.aau.group1.leiterspiel.Network.AckChecker;
-import at.aau.group1.leiterspiel.Network.Client;
-import at.aau.group1.leiterspiel.Network.ILobby;
-import at.aau.group1.leiterspiel.Network.INsdObserver;
-import at.aau.group1.leiterspiel.Network.MessageComposer;
-import at.aau.group1.leiterspiel.Network.NsdDiscovery;
-import at.aau.group1.leiterspiel.Network.NsdService;
+import at.aau.group1.leiterspiel.network.AckChecker;
+import at.aau.group1.leiterspiel.network.Client;
+import at.aau.group1.leiterspiel.network.ILobby;
+import at.aau.group1.leiterspiel.network.INsdObserver;
+import at.aau.group1.leiterspiel.network.MessageComposer;
+import at.aau.group1.leiterspiel.network.NsdDiscovery;
+import at.aau.group1.leiterspiel.network.NsdService;
 
 public class JoinActivity extends AppCompatActivity implements INsdObserver, ILobby {
 
-    private final String TAG = "Join";
+    private static final String TAG = "Join";
 
     // UI
     private LinearLayout list;
@@ -40,11 +41,9 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
     public static MessageComposer composer;
     public static int msgID = 0;
 
-    private AckChecker ackChecker = new AckChecker();
+    private static AckChecker ackChecker = new AckChecker();
     private static boolean discoveryStarted = false;
     private static NsdDiscovery discovery;
-    private static Timer uiTimer;
-    private static TimerTask timerTask;
     private static ArrayList<NsdServiceInfo> unhandledInfos = new ArrayList<>();
     private static TreeMap<Integer, NsdServiceInfo> availableServices = new TreeMap<>();
 
@@ -62,6 +61,11 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
         setContentView(R.layout.activity_join);
 
         list = (LinearLayout) findViewById(R.id.servicesList);
@@ -69,11 +73,6 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
         startButton = (Button) findViewById(R.id.searchButton);
 
         soundManager = new SoundManager(getApplicationContext());
-
-        // Prevents the keyboard from immediately appearing, but then the button has to be pressed
-        // twice before it reacts...because Android.
-//        startButton.setFocusableInTouchMode(true);
-//        startButton.requestFocus();
     }
 
     private void updateUI() {
@@ -104,13 +103,23 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
 
     @Override
     protected void onPause() {
-        if (discoveryStarted) discovery.stopDiscovery();
+        if (discoveryStarted)
+            discovery.stopDiscovery();
         super.onPause();
     }
 
     @Override
+    public void onBackPressed() {
+        discovery = null;
+        client = null;
+        discoveryStarted = false;
+        super.onBackPressed();
+    }
+
+    @Override
     protected void onResume() {
-        if (discoveryStarted) discovery.startDiscovery();
+        if (discoveryStarted)
+            discovery.startDiscovery();
         super.onResume();
     }
 
@@ -147,7 +156,7 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
         if (ackChecker.waitForAcknowledgement(msgID-1)) {
             startButton.setText(getString(R.string.connected_wait));
             startButton.setBackgroundColor(getResources().getColor(R.color.darkgreen));
-            soundManager.playConnectionSound();
+            soundManager.playSound("connected");
         } else {
             startButton.setText(getString(R.string.connection_failed));
             startButton.setBackgroundColor(getResources().getColor(R.color.darkred));
@@ -158,12 +167,14 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
         Log.d(TAG, "initDiscovery");
         if (!discoveryStarted) {
             clientName = playerNameInput.getText().toString();
+            if ("".equals(clientName))
+                clientName = getString(R.string.default_name)+"!";
 
             discovery = new NsdDiscovery(getApplicationContext(), clientName);
             discovery.registerObserver(this);
 
-            uiTimer = new Timer();
-            timerTask = new TimerTask() {
+            Timer uiTimer = new Timer();
+            TimerTask timerTask = new TimerTask() {
                 @Override
                 public void run() {
                     runOnUiThread(new Runnable() {
@@ -196,23 +207,24 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
 
     @Override
     public void assignIndex(int id, int index, String clientName) {
-        if (this.clientName.equals(clientName)) playerIndex = index;
+        if (this.clientName.equals(clientName))
+            playerIndex = index;
 
         composer.ack(id);
     }
 
     @Override
     public void setPlayer(int id, int playerIndex, String playerType, String playerName) {
-        this.playerSelection[playerIndex] = true;
-        this.playerTypes[playerIndex] = playerType;
-        this.playerNames[playerIndex] = playerName;
+        playerSelection[playerIndex] = true;
+        playerTypes[playerIndex] = playerType;
+        playerNames[playerIndex] = playerName;
 
         composer.ack(id);
     }
 
     @Override
     public void allowCheats(int id, boolean permitCheats, int turnSkips) {
-        this.cheatsEnabled = permitCheats;
+        cheatsEnabled = permitCheats;
         this.turnSkips = turnSkips;
 
         composer.ack(id);
@@ -230,10 +242,19 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
         // This is the player controlled on this client instance, which means it's local instead of
         // online here. See startGame() method in LobbyActivity.
         for (int i=0; i<LobbyActivity.MAX_PLAYERS; i++) {
-            if (i == this.playerIndex && playerTypes[i].equals(LobbyActivity.ONLINE))
+            if (i == playerIndex && playerTypes[i].equals(LobbyActivity.ONLINE))
                 playerTypes[i] = LobbyActivity.LOCAL;
         }
 
+        Intent intent = initIntent();
+
+        composer.ack(id);
+
+        startActivity(intent); // start the game activity
+        finish(); // end this activity as soon as the game activity finished
+    }
+
+    private Intent initIntent() {
         Intent intent = new Intent(getApplicationContext(), GameActivity.class);
         // add all lobby settings to intent so GameActivity can use them in initGame()
         intent.putExtra("PlayerSelection", playerSelection);
@@ -246,9 +267,6 @@ public class JoinActivity extends AppCompatActivity implements INsdObserver, ILo
         intent.putExtra("PlayerIndex", playerIndex);
         intent.putExtra("Online", true);
 
-        composer.ack(id);
-
-        startActivity(intent); // start the game activity
-        finish(); // end this activity as soon as the game activity finished
+        return intent;
     }
 }

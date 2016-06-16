@@ -1,4 +1,4 @@
-package at.aau.group1.leiterspiel.Network;
+package at.aau.group1.leiterspiel.network;
 
 /**
  * Created by Igor on 13.06.2016.
@@ -30,6 +30,7 @@ public class MessageComposer {
     }
 
     private void sendMsg(String msg) {
+//        Log.d("Composer", "Sending message: "+msg);
         if (serverSide && server != null) server.writeOutput(msg);
         if (!serverSide && client != null) client.writeOutput(msg);
     }

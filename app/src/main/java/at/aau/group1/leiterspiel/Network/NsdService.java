@@ -1,4 +1,4 @@
-package at.aau.group1.leiterspiel.Network;
+package at.aau.group1.leiterspiel.network;
 
 import android.content.Context;
 import android.net.nsd.NsdManager;
@@ -16,9 +16,7 @@ public class NsdService {
     public static final String SERVICE_NAME = "AuR_Game_";
     public static final String SERVICE_TYPE = "_http._tcp.";
     private ServerSocket serverSocket;
-    private int localPort = -1;
 
-    private String actualServiceName;
     private NsdManager.RegistrationListener registrationListener;
     private NsdManager nsdManager;
     private Context context;
@@ -31,7 +29,7 @@ public class NsdService {
     }
 
     public void startService() {
-        localPort = initializeServerSocket(); // get the next available port
+        int localPort = initializeServerSocket();
         initializeRegistrationListener();
         registerService(localPort);
     }
@@ -54,7 +52,6 @@ public class NsdService {
         try {
             serverSocket = new ServerSocket(0);
         } catch (IOException e) {
-//            e.printStackTrace();
             Log.e("NsdService", "Failed creating server socket: "+e.getMessage());
         }
         return serverSocket.getLocalPort(); // return the chosen port.
@@ -83,10 +80,7 @@ public class NsdService {
 
             @Override
             public void onServiceRegistered(NsdServiceInfo NsdServiceInfo) {
-                // Save the service name.  Android may have changed it in order to
-                // resolve a conflict, so update the name you initially requested
-                // with the name Android actually used.
-                actualServiceName = NsdServiceInfo.getServiceName();
+
             }
 
             @Override
@@ -96,8 +90,7 @@ public class NsdService {
 
             @Override
             public void onServiceUnregistered(NsdServiceInfo arg0) {
-                // Service has been unregistered.  This only happens when you call
-                // NsdManager.unregisterService() and pass in this listener.
+
             }
 
             @Override
