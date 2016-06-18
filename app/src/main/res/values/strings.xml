@@ -10,7 +10,6 @@
     <string name="online">Online</string>
     <string name="default_name">Name</string>
     <string name="press_back_again">Noch einmal zurück drücken um das Spiel zu beenden</string>
-    <string name="controls">Steuerung</string>
     <string name="game_rules">Spielanleitung</string>
     <string name="forbid_cheats">Schummeln verbieten</string>
     <string name="allow_cheats">Schummeln erlauben</string>
@@ -24,6 +23,18 @@
     <string name="no_eels">Spielfeld: Weniger Aale</string>
     <string name="default_eels">Spielfeld: Normal</string>
     <string name="many_eels">Spielfeld: Mehr Aale</string>
+
+    <!-- InfoActivity -->
+    <string name="rules">In Aale und Rolltreppen ist es das Ziel, als erster seine Figur ins Zielfeld zu bewegen.
+    Die Spieler würfeln dabei reihum. Wer dabei auf eine Rolltreppe kommt, kann einige Felder weiter
+    ziehen, bei Kontakt mit einem Aal hingegen wird die Spielfigur wieder ein Stück zurückbewegt.</string>
+    <string name="eels_info">Aale(grüne Felder) und Rolltreppen(blaue Felder) beeinflussen oft den Ausgang des Spiels.</string>
+    <string name="lobby_info">Mit den verschiedenen Buttons kann man weitere Spieler hinzufügen und
+    über WLAN beitreten lassen. Dazu gibt es auch die Möglichkeit, lokal auf dem gleichen Gerät zu spielen oder
+    gegen Computergegner(Bots) anzutreten.</string>
+    <string name="ui_info">Mit dem Würfel(links) wird bestimmt, wie viele Felder man seine Figur weiterziehen
+    kann. In der Mitte wird angezeigt, welcher Spieler gerade an der Reihe ist.</string>
+    <string name="controls">Steuerung</string>
 
     <!-- Wi-fi online mode -->
     <string name="searching_games">Suche läuft...</string>

@@ -22,9 +22,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".LobbyActivity" android:screenOrientation="portrait"/>
-        <activity android:name=".GameActivity" android:screenOrientation="portrait"/>
-        <activity android:name=".JoinActivity" android:screenOrientation="portrait" />
+        <activity
+            android:name=".LobbyActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".GameActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".JoinActivity"
+            android:screenOrientation="portrait" />
+        <activity android:name=".InfoActivity"
+            android:screenOrientation="portrait" ></activity>
     </application>
 
 </manifest>

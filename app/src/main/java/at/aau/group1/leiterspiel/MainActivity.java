@@ -22,24 +22,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-        //Help button: Not Implemented Yet: Triggers Easter egg!
-
-        Button helpbutton = (Button) findViewById(R.id.helpButton);
-        helpbutton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                //URL: Easter Egg Video. Since Help has not function yet: Computer says No!
-                Uri uri = Uri.parse("https://drive.google.com/file/d/0B0IOMdsaLshDVTdnV1NreUpjODQ/view?usp=sharing"); // missing 'http://' will cause crashed
-                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                startActivity(intent);
-            }
-        });
-    }
-
     public void startLobby(View view) {
          Intent intent = new Intent(getApplicationContext(), LobbyActivity.class);
         startActivity(intent);
@@ -47,6 +29,11 @@ public class MainActivity extends AppCompatActivity {
 
     public void joinLobby(View view) {
         Intent intent = new Intent(getApplicationContext(), JoinActivity.class);
+        startActivity(intent);
+    }
+
+    public void showRules(View view) {
+        Intent intent = new Intent(getApplicationContext(), InfoActivity.class);
         startActivity(intent);
     }
 

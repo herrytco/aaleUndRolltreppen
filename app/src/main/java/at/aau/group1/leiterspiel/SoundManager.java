@@ -26,8 +26,11 @@ public class SoundManager {
     }
 
     public void playSound(String sound) {
-        if (sound.equals("dice")) soundPool.play(diceID, volume, volume, 1, 0, 1.0f);
-        if (sound.equals("connected")) soundPool.play(connectedID, volume, volume, 1, 0, 1.0f);
-        if (sound.equals("fail")) soundPool.play(failID, volume, volume, 1, 0, 1.0f);
+        if (sound.equals("dice"))
+            soundPool.play(diceID, volume, volume, 1, 0, 1.0f);
+        if (sound.equals("connected"))
+            soundPool.play(connectedID, volume, volume, 1, 0, 1.0f);
+        if (sound.equals("fail"))
+            soundPool.play(failID, volume, volume, 1, 0, 1.0f);
     }
 }

@@ -183,11 +183,13 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
      * Checks whether the current player has finished the move animation, and if the animation is
      * complete, switch to the next player.
      */
-    public void checkProgress() {
+    public boolean checkProgress() {
         if (isMoving && !gameBoard.isMoving()) {
             isMoving = false;
             switchToNextPlayer();
+            return true;
         }
+        return false;
     }
 
     /**

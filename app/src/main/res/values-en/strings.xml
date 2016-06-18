@@ -10,7 +10,6 @@
     <string name="online">Online</string>
     <string name="default_name">Name</string>
     <string name="press_back_again">Press back again to end the game</string>
-    <string name="controls">Controls</string>
     <string name="game_rules">Rules</string>
     <string name="forbid_cheats">Disable cheating</string>
     <string name="allow_cheats">Allow cheating</string>
@@ -24,6 +23,18 @@
     <string name="no_eels">Board: Fewer eels</string>
     <string name="default_eels">Board: Normal</string>
     <string name="many_eels">Board: More eels</string>
+
+    <!-- InfoActivity -->
+    <string name="rules">In this game the goal is to get the own piece onto the last field on the board.
+    The players roll a dice which determines the number of fields they can move this turn. Stepping on
+    an escalator will move the piece forward even further, while landing on a field with an eel will
+    move the piece back a bit.</string>
+    <string name="eels_info">Eels(green fields) and escalators(blue fields) will often change the outcome of the game.</string>
+    <string name="lobby_info">Using the different buttons you can invite other players to join your game,
+    or play against other players on a single device(Local) or against computer opponents(Bots).</string>
+    <string name="ui_info">Roll the dice(left) to see how many fields you can move. In the middle the
+    current player is shown.</string>
+    <string name="controls">Controls</string>
 
     <!-- Wi-fi online mode -->
     <string name="searching_games">Searching...</string>

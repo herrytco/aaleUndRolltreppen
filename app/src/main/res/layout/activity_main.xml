@@ -54,28 +54,13 @@
                 android:background="@drawable/button"
                 android:textColor="#ffffff" />
 
-            <!-- There have been changes in : enabled, onclick due to Easter Egg :D -->
-
-            <Button
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="5dp"
-                android:text="@string/controls"
-                android:id="@+id/helpButton"
-                android:enabled="true"
-                android:layout_gravity="center_vertical"
-                android:background="@drawable/button"
-                android:textColor="#bbbbbb" />
-                <!-- android:onClick="showHelp"
-                android:enabled="false"/-->
-
             <Button
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="5dp"
                 android:text="@string/game_rules"
                 android:id="@+id/rulesButton"
-                android:enabled="false"
+                android:onClick="showRules"
                 android:layout_gravity="center_vertical"
                 android:background="@drawable/button"
                 android:textColor="#ffffff" />

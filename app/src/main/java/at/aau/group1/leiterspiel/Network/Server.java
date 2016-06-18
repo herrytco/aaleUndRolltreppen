@@ -11,6 +11,7 @@ import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
 
 /**
  * Created by Igor on 12.06.2016.
@@ -20,8 +21,7 @@ public class Server {
     private static final String TAG = "Server";
 
     private static final int BLOCK_TIMEOUT = 50;
-    private CommunicationTask communicator;
-    private Socket socket;
+    private ArrayList<CommunicationTask> communicators = new ArrayList<>();
     private ServerSocket serverSocket;
     private InputStream in;
     private OutputStream out;
@@ -55,13 +55,19 @@ public class Server {
     public void startCommunication(ServerSocket serverSocket) {
         stop = false;
         this.serverSocket = serverSocket;
+
+        runCommunicator();
+    }
+
+    public void runCommunicator() {
         // run the communication in background
-        communicator = new CommunicationTask();
-        communicator.execute();
+        communicators.add(new CommunicationTask());
+        // execute the AsyncTasks as parallel threads
+        communicators.get(communicators.size()-1).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, communicators.size());
     }
 
     public void disconnect() {
-        if (socket != null)
+//        if (socket != null)
             stop = true;
     }
 
@@ -83,10 +89,14 @@ public class Server {
      * Upon establishing a connection, this AsyncTask continually listens to the active InputStream
      * and writes messages via OutputStream, until it gets stopped by calling disconnect().
      */
-    public class CommunicationTask extends AsyncTask<Void,Void,Void> {
+    public class CommunicationTask extends AsyncTask<Integer,Void,Void> {
+
+        Socket socket;
 
         @Override
-        protected Void doInBackground(Void... params) {
+        protected Void doInBackground(Integer... params) {
+            int id = params[0];
+
             sb = new StringBuilder();
             try {
                 socket = serverSocket.accept(); // wait for a connection and open a socket for it
@@ -103,6 +113,7 @@ public class Server {
 
                     // writing output
                     if (write && output != null) {
+                        Log.d("Debug", id+": write "+output);
                         writer.write(output+"\n");
                         writer.flush(); // pro tip: this is important
                         write = false;

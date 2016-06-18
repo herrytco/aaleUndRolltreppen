@@ -171,6 +171,8 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
             }
 
             serviceActive = true;
+        } else {
+            server.runCommunicator();
         }
     }
 
@@ -193,7 +195,7 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
             if (newPlayer != null && openOnlineSlots>0) {
                 // begin with index 1 because player 0 is always the server
                 for (int i=1; i<MAX_PLAYERS; i++) {
-                    if (playerSelection[i] && playerTypes[i].equals(ONLINE)) {
+                    if (playerSelection[i] && playerTypes[i].equals(ONLINE) && "".equals(playerNames[i])) {
                         playerNameFields[i].setText(newPlayer);
                         playerNameFields[i].setBackground(getResources().getDrawable(R.drawable.rounded_online_player));
                         playerNameFields[i].setTextColor(getResources().getColor(R.color.white));
@@ -397,6 +399,8 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
         for (int i = 0; i<MAX_PLAYERS; i++) {
             if (i != index)
                 continue;
+            if (!playerSelection[i])
+                return;
 
             if (playerTypes[i] == BOT) { // if bot
                 playerTypes[i] = ONLINE;
@@ -412,7 +416,7 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
                 playerTypes[i] = BOT;
                 typeButtons[i].setText(R.string.bot);
             } else { // if online
-                if ("".equals(playerNameFields[i].getText())) { // if nobody joined yet
+                if ("".equals(playerNames[i])) { // if nobody joined yet
                     playerTypes[i] = LOCAL;
                     typeButtons[i].setText(R.string.local);
                     playerNameFields[i].setHint(R.string.default_name);
@@ -426,7 +430,7 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
 
     private void toggleUI() {
         for (int i=1; i<MAX_PLAYERS; i++) {
-            playerNameFields[i].setEnabled( playerTypes[i] == LOCAL && playerSelection[i] );
+            playerNameFields[i].setEnabled( playerTypes[i].equals(LOCAL) && playerSelection[i] );
         }
     }
 
@@ -443,6 +447,7 @@ public class LobbyActivity extends AppCompatActivity implements ICommListener, I
 
     @Override
     public void joinLobby(int id, String name) {
+        Log.d("Debug", "joinLobby(): "+openOnlineSlots+" open slots");
         if (openOnlineSlots>0) {
             newPlayer = name;
             uiChanged = true;
