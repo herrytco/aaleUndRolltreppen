@@ -13,17 +13,16 @@ public class PlayerTest {
 
     IPlayerObserver observer = new IPlayerObserver() {
         @Override
-        public void move(int playerID, int diceRoll) {
+        public void move(int playerID, int diceRoll, boolean localMove) {
 
         }
-
         @Override
         public int rollDice(int playerID) {
             return 0;
         }
     };
 
-    @Test
+
     public void testIDs() {
         Player p0 = new BotPlayer(observer);
         Player p1 = new LocalPlayer(observer);
@@ -34,7 +33,7 @@ public class PlayerTest {
         assertTrue (p1.getPlayerID() == 0);
     }
 
-    @Test
+
     public void testTypes() {
         Player p0 = new BotPlayer(observer);
         Player p1 = new LocalPlayer(observer);
