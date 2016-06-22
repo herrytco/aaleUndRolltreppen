@@ -1,8 +1,14 @@
 package at.aau.group1.leiterspiel;
 
+import android.content.Context;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.hardware.TriggerEventListener;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,6 +32,7 @@ import at.aau.group1.leiterspiel.game.BoardGenerator;
 import at.aau.group1.leiterspiel.game.BotPlayer;
 import at.aau.group1.leiterspiel.game.GameManager;
 import at.aau.group1.leiterspiel.game.IGameUI;
+import at.aau.group1.leiterspiel.game.Ladder;
 import at.aau.group1.leiterspiel.game.LocalPlayer;
 import at.aau.group1.leiterspiel.game.OnlinePlayer;
 import at.aau.group1.leiterspiel.game.Player;
@@ -63,6 +70,13 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     private static boolean clientDisconnected = false;
     private static boolean uiChanged = true;
     private static boolean uiEnabled = false;
+    private boolean cheatChecked = false;
+    // shake detection
+    private SensorManager sensorManager;
+    private SensorEventListener sensorEventListener;
+    private static final float SHAKE_GRAVITY = 2.5F;
+    private static final int SHAKE_TIMEOUT = 500;
+    private long shakeTime = 0;
 
     // UI elements
     private LinearLayout gameCanvas;
@@ -103,8 +117,6 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
 
     private Random random = new Random();
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -114,6 +126,33 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         setContentView(R.layout.activity_game);
+
+        sensorEventListener = new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                float x = event.values[0];
+                float y = event.values[1];
+                float z = event.values[2];
+                float xG = x / SensorManager.GRAVITY_EARTH;
+                float yG = y / SensorManager.GRAVITY_EARTH;
+                float zG = z / SensorManager.GRAVITY_EARTH;
+                float force = (float) Math.sqrt(xG*xG + yG*yG + zG*zG);
+
+                long time = System.currentTimeMillis();
+                if (force > SHAKE_GRAVITY && time - shakeTime > SHAKE_TIMEOUT) {
+                    rollDice(null);
+
+                    shakeTime = time;
+                }
+            }
+
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {
+                // not needed
+            }
+        };
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        sensorManager.registerListener(sensorEventListener, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     private void initUI() {
@@ -245,6 +284,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         super.onWindowFocusChanged(hasFocus);
 
         if (hasFocus) {
+            sensorManager.registerListener(sensorEventListener, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
+
             if (!gameInitialized)
                 initGame();
             initUI();
@@ -265,6 +306,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     @Override
     protected void onStop() {
         super.onStop();
+
+        sensorManager.unregisterListener(sensorEventListener);
 
         if (gameManager!=null)
             gameManager.pauseGame();
@@ -378,7 +421,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     }
 
     private void updateVisibility() {
-        cheatButton.setEnabled(gameManager.areCheatsEnabled());
+        cheatButton.setEnabled(gameManager.areCheatsEnabled() && !cheatChecked);
         cheatButton.setVisibility(gameManager.areCheatsEnabled()? View.VISIBLE : View.INVISIBLE);
 
         if (winner != null && endScreen != null) {
@@ -438,6 +481,8 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     }
 
     public void checkForCheat(View view) {
+        cheatButton.setEnabled(false);
+        cheatChecked = true;
         checkForCheat();
     }
 
@@ -475,6 +520,7 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
     @Override
     public void showPlayer(int index) {
         uiChanged = true;
+        cheatChecked = false;
         activePlayer = index;
     }
 
@@ -499,6 +545,14 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         clientDisconnected = true;
     }
 
+    @Override
+    public void playLadder(Ladder.LadderType type) {
+        if (type.equals(Ladder.LadderType.UP))
+            soundManager.playSound("esc");
+        else
+            soundManager.playSound("eel");
+    }
+
     public void backToStartScreen(View view) {
         resetGame();
         finish();
@@ -518,5 +572,4 @@ public class GameActivity extends AppCompatActivity implements IGameUI {
         uiContainer.setLayoutParams(params);
         uiAlignedToBottom = !uiAlignedToBottom;
     }
-
 }

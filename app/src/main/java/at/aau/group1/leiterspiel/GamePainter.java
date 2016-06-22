@@ -61,6 +61,10 @@ public class GamePainter {
     private int yOffset = 0;
 
     public GamePainter(int width, int height) {
+        if (width <= 0 || height <= 0) {
+            width = 512;
+            height = 512;
+        }
         canvasWidth = width;
         canvasHeight = height;
         init();
@@ -145,6 +149,8 @@ public class GamePainter {
      * Needs to be called once whenever the canvas size or game board change.
      */
     public void buildBoard(GameBoard gameBoard) {
+        if (gameBoard == null)
+            return;
 
         if (canvasHeight < canvasWidth) { // if the device is in landscape mode, align more fields horizontally to make better use of the screen
             double m = (double) canvasWidth / (double) canvasHeight;
@@ -381,6 +387,9 @@ public class GamePainter {
      * @param gameBoard the state of the game that should be drawn
      */
     public void drawFrame(GameBoard gameBoard) {
+        if (gameBoard == null)
+            return;
+        
         frameFinished = false;
         paintTask.doInBackground(gameBoard);
     }

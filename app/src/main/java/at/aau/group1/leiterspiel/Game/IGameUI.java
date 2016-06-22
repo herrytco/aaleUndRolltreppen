@@ -21,6 +21,8 @@ public interface IGameUI {
     public void skipTurn();
     public void notifyClientDisconnect();
 
+    public void playLadder(Ladder.LadderType type);
+
     // online
 
     public void setDice(int result);

@@ -54,6 +54,8 @@ public class Client {
      * @param serviceInfo The NsdServiceInfo of the service that this Client should connect to
      */
     public void connectToServer(NsdServiceInfo serviceInfo) {
+        if  (serviceInfo == null)
+            return;
         if (socket != null)
             Log.d(TAG, "Connection not established: previous connection is still active.");
         stop = false;
@@ -81,6 +83,8 @@ public class Client {
     }
 
     public void writeOutput(String str) {
+        if (str == null)
+            return;
         output = str;
         write = true;
     }

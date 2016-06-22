@@ -5,7 +5,7 @@ package at.aau.group1.leiterspiel.network;
  */
 public class AckChecker {
 
-    private final int TIMEOUT = 4000; // default timeout of 2 seconds
+    private final int TIMEOUT = 3000; // default timeout of 3 seconds
     private int lastAckID = -1;
 
     public AckChecker() {}

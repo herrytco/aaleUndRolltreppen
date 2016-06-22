@@ -13,7 +13,7 @@ public class PlayerTest {
 
     IPlayerObserver observer = new IPlayerObserver() {
         @Override
-        public void move(int playerID, int diceRoll) {
+        public void move(int playerID, int diceRoll, boolean localMove) {
 
         }
 
@@ -40,6 +40,14 @@ public class PlayerTest {
         Player p1 = new LocalPlayer(observer);
         assertTrue (!p0.expectsTouchInput());
         assertTrue (p1.expectsTouchInput());
+    }
+
+    @Test
+    public void testNames() {
+        Player p0 = new BotPlayer(observer);
+        p0.setName("Test");
+        p0.setName(null);
+        assertTrue (p0.getName()!=null);
     }
 
 }

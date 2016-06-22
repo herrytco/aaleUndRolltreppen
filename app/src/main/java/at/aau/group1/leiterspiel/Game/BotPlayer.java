@@ -4,6 +4,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import at.aau.group1.leiterspiel.GameActivity;
+import at.aau.group1.leiterspiel.LobbyActivity;
 
 /**
  * Created by Igor on 21.04.2016.
@@ -16,6 +17,11 @@ public class BotPlayer extends Player {
     public BotPlayer(IPlayerObserver observer) {
         super("Bot", observer);
         this.setName("Player " + super.getPlayerID() + " (Bot)");
+    }
+
+    @Override
+    public String getIdentifier() {
+        return LobbyActivity.BOT;
     }
 
     @Override
@@ -40,6 +46,8 @@ public class BotPlayer extends Player {
     @Override
     public void setDiceResult(int dice) {
         super.setDiceResult(dice);
+        if (dice < 1 || dice > 6)
+            dice = 1;
 
         observer.move(getPlayerID(), dice, false);
     }

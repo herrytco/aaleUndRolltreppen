@@ -24,6 +24,7 @@ public class GameBoard {
     private Piece movingPiece;
     private boolean isMoving = false;
     private int previousField = 0;
+    private Ladder triggeredLadder;
 
     public GameBoard() {
         // default constructor
@@ -50,6 +51,8 @@ public class GameBoard {
      * @param number Number of fields
      */
     public void setNumberOfFields(int number) {
+        if (number < 10)
+            number = 10;
         this.numberOfFields = number;
         this.fields = new GameField[this.numberOfFields];
         Arrays.fill(fields, new GameField());
@@ -89,6 +92,7 @@ public class GameBoard {
     public boolean movePiece(int playerID, int fields) {
         boolean gameEnded = false;
         boolean ladderUsed = false;
+        triggeredLadder = null;
 
         Piece currentPiece = getPieceOfPlayer(playerID);
         if(currentPiece == null)
@@ -113,8 +117,10 @@ public class GameBoard {
             if (ladder.checkFields(currentField)) {
                 int temp = currentField;
                 currentField = ladder.checkActivation(currentField);
-                if (temp != currentField)
+                if (temp != currentField) {
                     ladderUsed = true;
+                    triggeredLadder = ladder;
+                }
                 break;
             }
         }
@@ -147,6 +153,10 @@ public class GameBoard {
         return 1.0/(fps/ratio);
     }
 
+    public Ladder getTriggeredLadder() {
+        return triggeredLadder;
+    }
+
     public boolean checkOvershootingMove(int playerID, int fields) {
         for (Piece p: pieces) {
             if (p.getPlayerID() == playerID) {
@@ -176,12 +186,12 @@ public class GameBoard {
      * Rollback a cheater's last move.
      *
      * @param cheaterID ID of the cheater
-     * @param fields number of fields to go back
+     * @param field number of field to go back to
      */
-    public void revertMove(int cheaterID, int fields) {
+    public void revertMove(int cheaterID, int field) {
         for (Piece p: pieces) {
             if (p.getPlayerID() == cheaterID) {
-                p.setField(p.getField()-fields);
+                p.setField(field);
             }
         }
     }
@@ -237,6 +247,8 @@ public class GameBoard {
      * @return Index of the field nearest to the given point on the canvas
      */
     public int getFieldAtPosition(Point point) {
+        if (point == null) return 0;
+
         int nearestField = 0;
         int minDistance = Integer.MAX_VALUE;
         for (int n=0; n<fields.length; n++) {

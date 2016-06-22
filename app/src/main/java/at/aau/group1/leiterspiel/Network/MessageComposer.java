@@ -13,10 +13,21 @@ public class MessageComposer {
     String name;
     // specifies if this MessageComposer instance should write to the server or client
     private boolean serverSide = false;
+    // only used for tests
+    private boolean test = false;
+    private String message;
 
     public MessageComposer(String name, boolean isServerSide) {
         this.name = name;
         this.serverSide = isServerSide;
+    }
+
+    public void setTest(boolean test) {
+        this.test = test;
+    }
+
+    public String getTestMessage() {
+        return message;
     }
 
     public void changeName(String name) { this.name = name; }
@@ -30,9 +41,15 @@ public class MessageComposer {
     }
 
     private void sendMsg(String msg) {
-//        Log.d("Composer", "Sending message: "+msg);
-        if (serverSide && server != null) server.writeOutput(msg);
-        if (!serverSide && client != null) client.writeOutput(msg);
+        if (test) {
+            message = msg;
+            return;
+        }
+
+        if (serverSide && server != null)
+            server.writeOutput(msg);
+        if (!serverSide && client != null)
+            client.writeOutput(msg);
     }
 
     public void ack(int id) {

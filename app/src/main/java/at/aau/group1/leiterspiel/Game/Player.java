@@ -22,11 +22,15 @@ public abstract class Player {
         return playerID;
     }
 
+    public String getIdentifier() { return null; }
+
     public String getName() {
         return name;
     }
     public void setName(String newName) {
         name = newName;
+        if (name == null)
+            name = getIdentifier()+" "+playerID;
     }
 
     /**

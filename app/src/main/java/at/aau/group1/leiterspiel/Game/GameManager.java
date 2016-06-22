@@ -8,6 +8,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import at.aau.group1.leiterspiel.GameActivity;
+import at.aau.group1.leiterspiel.LobbyActivity;
 import at.aau.group1.leiterspiel.network.AckChecker;
 import at.aau.group1.leiterspiel.network.IOnlineGameManager;
 
@@ -97,6 +98,9 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
     public void pauseGame() { this.active = false; }
 
     public void addPlayer(Player player) {
+        if (player == null)
+            return;
+
         players.add(player);
         gameBoard.addPiece(new Piece(player.getPlayerID()));
     }
@@ -104,6 +108,8 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
     public GameBoard getGameBoard() { return gameBoard; }
 
     public void setGameBoard(GameBoard gameBoard) {
+        if (gameBoard == null)
+            return;
         this.gameBoard = gameBoard;
     }
 
@@ -145,7 +151,9 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
             // make sure cheats can't be used for the last winning move
             if (gameBoard.checkWinningMove(playerID, steps))
                 return false;
-            cheat = new CheatAction(playerID, steps);
+
+            int oldField = gameBoard.getPieceOfPlayer(players.get(activePlayer).getPlayerID()).getField();
+            cheat = new CheatAction(playerID, oldField);
         }
 
         // finally make the move
@@ -154,6 +162,10 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
             this.active = false;
         }
         isMoving = true;
+
+        Ladder ladder = gameBoard.getTriggeredLadder();
+        if (ladder != null)
+            ui.playLadder(ladder.getType());
 
         if (waitTimer != null)
             waitTimer.cancel();
@@ -219,7 +231,7 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
             GameActivity.gameComposer.poke(GameActivity.msgID++, activePlayer);
             ackChecker.waitForAcknowledgement(GameActivity.msgID - 1);
             // wait for the client to make a move
-            if (activePlayer != GameActivity.playerIndex)
+            if (players.get(activePlayer).getIdentifier().equals(LobbyActivity.ONLINE))
                 schedulePing();
         }
 
@@ -264,7 +276,7 @@ public class GameManager implements IPlayerObserver, ITouchObserver, IOnlineGame
                 return null;
         }
 
-        if (cheat != null) { // if someone cheated
+        if (cheat != null && cheaterID == -1) { // if someone cheated
             // mark cheater for the next rounds
             cheaterID = cheat.getPlayerID();
             turnSkips = maxTurnSkips;
