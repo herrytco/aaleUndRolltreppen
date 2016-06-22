@@ -1,3 +1,50 @@
-<resources>
-    <string name="app_name">Leiterspiel</string>
+﻿<resources>
+    <string name="app_name">Aale und Rolltreppen</string>
+    <string name="dice_button">Würfeln</string>
+    <string name="game_finished">Spiel beendet</string>
+    <string name="start_game">Spiel starten</string>
+    <string name="join_game">Spiel beitreten</string>
+    <string name="start">Start</string>
+    <string name="local">Lokal</string>
+    <string name="bot">Bot</string>
+    <string name="online">Online</string>
+    <string name="default_name">Name</string>
+    <string name="press_back_again">Noch einmal zurück drücken um das Spiel zu beenden</string>
+    <string name="game_rules">Spielanleitung</string>
+    <string name="forbid_cheats">Schummeln verbieten</string>
+    <string name="allow_cheats">Schummeln erlauben</string>
+    <string name="somebody_cheated">hat geschummelt!</string>
+    <string name="nobody">Niemand</string>
+    <string name="punishment">Bestrafung</string>
+    <string name="skip_cheater">aussetzen</string>
+    <string name="loading">Lädt...</string>
+    <string name="skip_turn">Zug nicht möglich</string>
+    <string name="back_to_menu">Zurück zum Hauptmenü</string>
+    <string name="no_eels">Spielfeld: Weniger Aale</string>
+    <string name="default_eels">Spielfeld: Normal</string>
+    <string name="many_eels">Spielfeld: Mehr Aale</string>
+
+    <!-- InfoActivity -->
+    <string name="rules">In Aale und Rolltreppen ist es das Ziel, als erster seine Figur ins Zielfeld zu bewegen.
+    Die Spieler würfeln dabei reihum. Wer dabei auf eine Rolltreppe kommt, kann einige Felder weiter
+    ziehen, bei Kontakt mit einem Aal hingegen wird die Spielfigur wieder ein Stück zurückbewegt.</string>
+    <string name="eels_info">Aale(grüne Felder) und Rolltreppen(blaue Felder) beeinflussen oft den Ausgang des Spiels.</string>
+    <string name="lobby_info">Mit den verschiedenen Buttons kann man weitere Spieler hinzufügen und
+    über WLAN beitreten lassen. Dazu gibt es auch die Möglichkeit, lokal auf dem gleichen Gerät zu spielen oder
+    gegen Computergegner(Bots) anzutreten.</string>
+    <string name="ui_info">Mit dem Würfel(links) wird bestimmt, wie viele Felder man seine Figur weiterziehen
+    kann. In der Mitte wird angezeigt, welcher Spieler gerade an der Reihe ist.</string>
+    <string name="controls">Steuerung</string>
+
+    <!-- Wi-fi online mode -->
+    <string name="searching_games">Suche läuft...</string>
+    <string name="search_games">Spiele suchen</string>
+    <string name="connecting">Verbinde...</string>
+    <string name="connection_failed">Verbindungsaufbau gescheitert</string>
+    <string name="connected_wait">Verbunden. Warte auf Spielstart...</string>
+    <string name="timeout">Fehler bei Verbindung: Zeitablauf</string>
+    <string name="waiting">Bitte warten...</string>
+    <string name="service_visible">Spiel ist nun im Netzwerk sichtbar</string>
+    <string name="player_dc">Verbindung zu Spieler unterbrochen</string>
+    <string name="open_slot">Warte noch auf Spieler</string>
 </resources>

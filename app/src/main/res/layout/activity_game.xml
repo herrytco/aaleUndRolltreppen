@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    tools:context="at.aau.group1.leiterspiel.GameActivity" >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical"
+        android:background="@drawable/tiling_background">
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/gameCanvas"
+            tools:context="at.aau.group1.leiterspiel.GameActivity"
+            android:orientation="horizontal">
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/uiContainer"
+        android:background="@drawable/ui_container"
+        android:layout_margin="20dp"
+        android:baselineAligned="false">
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:layout_weight="70"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            tools:context="at.aau.group1.leiterspiel.GameActivity"
+            android:orientation="vertical">
+
+            <ImageButton
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:cropToPadding="true"
+                android:adjustViewBounds="true"
+                android:clickable="true"
+                android:enabled="true"
+                android:onClick="rollDice"
+                android:id="@+id/diceButton"
+                android:scaleType="centerInside"
+                android:background="@drawable/dice_1" />
+
+        </LinearLayout>
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_weight="30"
+            android:paddingRight="16dp"
+            android:gravity="center"
+            tools:context="at.aau.group1.leiterspiel.GameActivity"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="20"
+                android:orientation="vertical" >
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="10dp"
+                    android:id="@+id/activePlayerView"
+                    android:layout_weight="50" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="50"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:text="Large Text"
+                    android:id="@+id/statusView"
+                    android:layout_gravity="center"
+                    android:textAlignment="center"
+                    android:gravity="center"
+                    android:textColor="#000000"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="80"
+                android:gravity="center"
+                android:orientation="vertical" >
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="2dp"
+                    android:onClick="checkForCheat"
+                    android:id="@+id/cheatCheckButton"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:textColor="#ff0000"
+                    android:textStyle="bold"
+                    android:text="!"
+                    android:background="@drawable/ui_container" />
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="2dp"
+                    android:text="&#8597;"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:onClick="toggleUI"
+                    android:background="@drawable/ui_container" />
+
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/endPopup"
+        android:background="@drawable/ui_container"
+        android:layout_margin="50dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:baselineAligned="false" >
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="40dp"
+            android:text="@string/game_finished"
+            android:textAlignment="center"
+            android:textStyle="bold"
+            android:textAppearance="@style/TextAppearance.AppCompat.Headline" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/winnerView" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/loading"
+            android:id="@+id/winnerName"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="40dp"
+            android:onClick="backToStartScreen"
+            android:text="@string/back_to_menu"
+            android:background="@color/blue"
+            android:textColor="#ffffff" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#ffffff"
+        android:id="@+id/loadingScreen">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="@string/loading"
+            android:id="@+id/textView"
+            android:gravity="center" />
+    </LinearLayout>
+</RelativeLayout>
