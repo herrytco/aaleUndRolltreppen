@@ -54,10 +54,10 @@ public class Client {
      * @param serviceInfo The NsdServiceInfo of the service that this Client should connect to
      */
     public void connectToServer(NsdServiceInfo serviceInfo) {
-        if  (serviceInfo == null)
-            return;
-        if (socket != null)
+        if (socket != null) {
             Log.d(TAG, "Connection not established: previous connection is still active.");
+            return;
+        }
         stop = false;
         SocketAddress address = new InetSocketAddress(
                 serviceInfo.getHost().getHostAddress(), serviceInfo.getPort());
@@ -70,7 +70,8 @@ public class Client {
     }
 
     public void disconnect() {
-        if (socket != null) stop = true;
+        if (socket != null)
+            stop = true;
     }
 
     public String getInput() {
@@ -83,8 +84,6 @@ public class Client {
     }
 
     public void writeOutput(String str) {
-        if (str == null)
-            return;
         output = str;
         write = true;
     }
@@ -100,12 +99,15 @@ public class Client {
             sb = new StringBuilder();
             try {
                 SocketAddress address = params[0];
+                Log.d("Debug", address+"");
                 socket.connect(address, 5000);
                 if (socket.isConnected()) {
                     in = socket.getInputStream();
                     out = socket.getOutputStream();
                     // set timeout for the read() method, otherwise the thread would be blocked until it receives something over the InputStream
                     socket.setSoTimeout(BLOCK_TIMEOUT);
+                    Log.d("Debug", socket+"");
+                    Log.d("Debug", in+"");
                 } else return null;
 
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
@@ -123,6 +125,7 @@ public class Client {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+                return null;
             }
 
             // disconnect

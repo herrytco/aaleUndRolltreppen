@@ -15,17 +15,6 @@ import static org.junit.Assert.assertTrue;
 public class NetworkTest {
 
     @Test
-    public void testClient() {
-        Client client = new Client();
-        try {
-            client.writeOutput(null);
-            client.connectToServer(null);
-        } catch(Exception e) {
-            assertTrue(false);
-        }
-    }
-
-    @Test
     public void testAckChecker() {
         AckChecker ackChecker = new AckChecker();
         ackChecker.setLastAckID(1);

@@ -53,8 +53,6 @@ public class Server {
      * @param serverSocket The ServerSocket initialized with a port number
      */
     public void startCommunication(ServerSocket serverSocket) {
-        if (serverSocket == null)
-            return;
         stop = false;
         this.serverSocket = serverSocket;
 
@@ -69,7 +67,6 @@ public class Server {
     }
 
     public void disconnect() {
-//        if (socket != null)
             stop = true;
     }
 
@@ -83,8 +80,6 @@ public class Server {
     }
 
     public void writeOutput(String str) {
-        if (str == null)
-            return;
         output = str;
         write = true;
     }
